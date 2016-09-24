@@ -4,20 +4,20 @@ import (
 	"testing"
 )
 
-var testValue string = ""
+var testValue = ""
 
 type testLogger struct {
 	minLevel byte
 }
 
-func (tl *testLogger) Print(prefix, content string) {
-	testValue = prefix + content
+func (tl *testLogger) Print(level byte, content string) {
+	testValue = levelMap[level] + content
 }
-func (tl *testLogger) Panic(prefix, content string) {
-	testValue = prefix + content
+func (tl *testLogger) Panic(content string) {
+	testValue = panicPrefix + content
 }
-func (tl *testLogger) Fatal(prefix, content string) {
-	testValue = prefix + content
+func (tl *testLogger) Fatal(content string) {
+	testValue = fatalPrefix + content
 }
 func (tl *testLogger) MinLevel() byte {
 	return tl.minLevel
@@ -46,20 +46,20 @@ func TestLoggerBaseOutPut(t *testing.T) {
 	tl.SetMinLevel(DebugLevel)
 
 	//Print
-	tl.Print("1", "1")
-	if testValue != "11" {
+	tl.Print(0, "1")
+	if testValue != "[Debug]1" {
 		t.Errorf("Print: the testValue should be \"11\", but get %s.\n", testValue)
 	}
 
 	//Panic
-	tl.Panic("2", "2")
-	if testValue != "22" {
+	tl.Panic("2")
+	if testValue != "[Panic]2" {
 		t.Errorf("Panic: the testValue should be \"22\", but get %s.\n", testValue)
 	}
 
 	//Fatal
-	tl.Fatal("3", "3")
-	if testValue != "33" {
+	tl.Fatal("3")
+	if testValue != "[Fatal]3" {
 		t.Errorf("Fatal: the testValue should be \"33\", but get %s.\n", testValue)
 	}
 

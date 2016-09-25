@@ -2,20 +2,19 @@
 package log
 
 import (
-	"fmt"
 	"log"
 )
 
 // levels
 const (
-	DebugLevel = iota
+	InfoLevel = iota
 	WarnLevel
 	ErrorLevel
 	PanicLevel
 	FatalLevel
 	defaultFlag = log.LstdFlags | log.Lshortfile
 
-	debugPrefix = "[Debug]"
+	infoPrefix  = "[Info ]"
 	warnPrefix  = "[Warn ]"
 	errorPrefix = "[Error]"
 	panicPrefix = "[Panic]"
@@ -23,7 +22,7 @@ const (
 )
 
 var levelMap = map[byte]string{
-	DebugLevel: debugPrefix,
+	InfoLevel:  infoPrefix,
 	WarnLevel:  warnPrefix,
 	ErrorLevel: errorPrefix,
 	PanicLevel: panicPrefix,
@@ -37,87 +36,28 @@ var levelMap = map[byte]string{
 //   * add log level
 //   * filter low level logs
 type Logger interface {
-	// Print base log like debug, warn, error
-	Print(level byte, content string)
+	// Infof print info level log.
+	Infof(format string, v ...interface{})
+	// Warnf print warn level log.
+	Warnf(format string, v ...interface{})
+	// Errorf print error level log.
+	Errorf(v ...interface{})
 	// Panic is equivalent to Print() followed by a call to panic().
-	Panic(content string)
+	Panicf(format string, v ...interface{})
 	// Fatal is equivalent to l.Print() followed by a call to os.Exit(1).
-	Fatal(content string)
+	Fatalf(format string, v ...interface{})
+	// Infoln print info level log.
+	Infoln(v ...interface{})
+	// Warnln print wran level log.
+	Warnln(v ...interface{})
+	// Errorln print error level log.
+	Errorln(v ...interface{})
+	// Panic is equivalent to Print() followed by a call to panic().
+	Panicln(v ...interface{})
+	// Fatal is equivalent to l.Print() followed by a call to os.Exit(1).
+	Fatalln(v ...interface{})
 	// MinLevel return the minimize level logger should print.
 	MinLevel() byte
 	// SetMinLevel set the minLevel of logger.
 	SetMinLevel(byte)
-}
-
-// Debugf print debug level logs.
-//
-// Pure Debug function or other type print log function is useless, so it does not
-// define them.
-func Debugf(logger Logger, format string, v ...interface{}) {
-	if logger.MinLevel() <= DebugLevel {
-		logger.Print(DebugLevel, fmt.Sprintf(format, v...))
-	}
-}
-
-// Debugln print debug level logs.
-func Debugln(logger Logger, v ...interface{}) {
-	if logger.MinLevel() <= DebugLevel {
-		logger.Print(DebugLevel, fmt.Sprintln(v...))
-	}
-}
-
-// Warnf print warn level logs.
-func Warnf(logger Logger, format string, v ...interface{}) {
-	if logger.MinLevel() <= WarnLevel {
-		logger.Print(WarnLevel, fmt.Sprintf(format, v...))
-	}
-}
-
-// Warnln print warn level logs.
-func Warnln(logger Logger, v ...interface{}) {
-	if logger.MinLevel() <= WarnLevel {
-		logger.Print(WarnLevel, fmt.Sprintln(v...))
-	}
-}
-
-// Errorf print error level logs.
-func Errorf(logger Logger, format string, v ...interface{}) {
-	if logger.MinLevel() <= ErrorLevel {
-		logger.Print(ErrorLevel, fmt.Sprintf(format, v...))
-	}
-}
-
-// Errorln print error level logs.
-func Errorln(logger Logger, v ...interface{}) {
-	if logger.MinLevel() <= ErrorLevel {
-		logger.Print(ErrorLevel, fmt.Sprintln(v...))
-	}
-}
-
-// Panicf print panic level logs.
-func Panicf(logger Logger, format string, v ...interface{}) {
-	if logger.MinLevel() <= PanicLevel {
-		logger.Panic(fmt.Sprintf(format, v...))
-	}
-}
-
-// Panicln print panic level logs.
-func Panicln(logger Logger, v ...interface{}) {
-	if logger.MinLevel() <= PanicLevel {
-		logger.Panic(fmt.Sprintln(v...))
-	}
-}
-
-// Fatalf print fatal level logs.
-func Fatalf(logger Logger, format string, v ...interface{}) {
-	if logger.MinLevel() <= FatalLevel {
-		logger.Fatal(fmt.Sprintf(format, v...))
-	}
-}
-
-// Fatalln print fatal level logs.
-func Fatalln(logger Logger, v ...interface{}) {
-	if logger.MinLevel() <= FatalLevel {
-		logger.Fatal(fmt.Sprintln(v...))
-	}
 }

@@ -1,7 +1,6 @@
 package log
 
 import (
-	// "errors"
 	"fmt"
 	"io"
 	"log"
@@ -107,25 +106,126 @@ func NewLogger(out io.Writer, err io.Writer, prefix string, level byte) *TwoOutp
 	}
 }
 
-// Print print base log like debug, warn, error.
-func (l *TwoOutputLogger) Print(level byte, content string) {
-	if level < ErrorLevel {
-		l.outLogger.Print(levelMap[level], content)
-	} else {
-		l.errLogger.Print(levelMap[level], content)
+// levelCheck check print whether is bigger than minLevel, if it is true return ture
+func (l *TwoOutputLogger) levelCheck(printLevel byte) bool {
+	if l.MinLevel() <= printLevel {
+		return true
 	}
+
+	return false
 }
 
-// Panic is equivalent to Print() followed by a call to panic().
+// repeat create a default format string for ***ln
+// format stirng: [prefix%v %v %v\n]
+func (l *TwoOutputLogger) repeat(prefix string, count int) string {
+	s := "%v "
+	pl := len(prefix)
+	rl := len(s) * count
+	b := make([]byte, rl+pl)
+	copy(b, prefix)
+
+	nb := b[pl:]
+	bp := copy(nb, s)
+	for bp < len(nb) {
+		copy(nb[bp:], nb[:bp])
+		bp *= 2
+	}
+	b[pl+rl-1] = '\n'
+	return string(b)
+}
+
+// Infof print info level log.
+func (l *TwoOutputLogger) Infof(format string, v ...interface{}) {
+	if !l.levelCheck(InfoLevel) {
+		return
+	}
+
+	l.outLogger.Printf(infoPrefix+format, v...)
+}
+
+// Infoln print info level log.
+func (l *TwoOutputLogger) Infoln(v ...interface{}) {
+	if !l.levelCheck(InfoLevel) {
+		return
+	}
+
+	l.outLogger.Printf(l.repeat(infoPrefix, len(v)), v...)
+}
+
+// Warnf print wran level log.
+func (l *TwoOutputLogger) Warnf(format string, v ...interface{}) {
+	if !l.levelCheck(WarnLevel) {
+		return
+	}
+
+	l.outLogger.Printf(warnPrefix+format, v...)
+}
+
+// Warnln print wran level log.
+func (l *TwoOutputLogger) Warnln(v ...interface{}) {
+	if !l.levelCheck(WarnLevel) {
+		return
+	}
+
+	l.outLogger.Printf(l.repeat(warnPrefix, len(v)), v...)
+}
+
+// Errorf print error level log.
+func (l *TwoOutputLogger) Errorf(format string, v ...interface{}) {
+	if !l.levelCheck(ErrorLevel) {
+		return
+	}
+
+	l.outLogger.Printf(errorPrefix+format, v...)
+}
+
+// Errorln print error level log.
+func (l *TwoOutputLogger) Errorln(v ...interface{}) {
+	if !l.levelCheck(ErrorLevel) {
+		return
+	}
+
+	l.outLogger.Printf(l.repeat(errorPrefix, len(v)), v...)
+}
+
+// Panicf is equivalent to Print() followed by a call to panic().
 // just call logger.Panic
-func (l *TwoOutputLogger) Panic(content string) {
-	l.errLogger.Panic(panicPrefix, content)
+func (l *TwoOutputLogger) Panicf(format string, v ...interface{}) {
+	if !l.levelCheck(PanicLevel) {
+		return
+	}
+
+	l.outLogger.Panicf(panicPrefix+format, v...)
 }
 
-// Fatal is equivalent to l.Print() followed by a call to os.Exit(1).
+// Panicln is equivalent to Print() followed by a call to panic().
+// just call logger.Panic
+func (l *TwoOutputLogger) Panicln(v ...interface{}) {
+	if !l.levelCheck(PanicLevel) {
+		return
+	}
+
+	l.outLogger.Panicf(l.repeat(panicPrefix, len(v)), v...)
+}
+
+// Fatalf is equivalent to l.Print() followed by a call to os.Exit(1).
 // just call logger.Fatal
-func (l *TwoOutputLogger) Fatal(content string) {
-	l.errLogger.Fatal(fatalPrefix, content)
+func (l *TwoOutputLogger) Fatalf(format string, v ...interface{}) {
+	if !l.levelCheck(FatalLevel) {
+		return
+	}
+
+	l.errLogger.Fatalf(fatalPrefix+format, v...)
+}
+
+// Fatalln is equivalent to l.Print() followed by a call to os.Exit(1).
+// just call logger.Fatal
+func (l *TwoOutputLogger) Fatalln(v ...interface{}) {
+	if !l.levelCheck(FatalLevel) {
+		return
+	}
+
+	l.errLogger.Fatalf(l.repeat(fatalPrefix, len(v)), v...)
 }
 
 // MinLevel return the minimize level logger should print.

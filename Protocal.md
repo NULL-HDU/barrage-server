@@ -21,14 +21,14 @@
 **ballId**: `userId(userId)+id(Uint16)`
 
 * userId: Uint64, the id of the creator of this ball
-* id: Uint16, it is a value from 1 - 2*32. After user creating a ball, it add to one. 0 is your airplane
+* id: Uint16, it is a value from 1 - 2*32. After user creating a ball, it add to one. 0 is user's airplane
 
 **ball**: `camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint16) + damage(damage) + role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(Float32) + alive(bool) + isKilled(bool) + locationCurrent(location)`
 
 **nickname**: `lengthOfName(Uint8) + name(lengthOfNickname * Uint8)`
 
 * lengthOfName: Uint8, the length of nickname
-* name: lengthOfNickname * byte, it is a string.
+* name: lengthOfNickname * Uint8, it is a string.
 
 **background**: `imageId(Uint8)`
 
@@ -36,26 +36,26 @@
 
 **collisionInfos**: `lengthOfCollisionInfos(Uint32) + collisionInfoArray(lengthOfCollisionInfos * collisionInfo)`
 
-* lengthOfCollisionInfos: Uint32, the length of collisionInfo.
+* lengthOfCollisionInfos: Uint32, the length of collisionInfoArray.
 
 **displacementInfo**: `displacementOfBall(ball)`
 
 **displacementInfos**: `lengthOfDisplacementInfos(Uint32) + displacementInfoArray(lengthOfDisplacementInfos * displacementInfo)`
 
-* lengthOfDisplacementInfos: Uint32, the length of displacementInfo.
+* lengthOfDisplacementInfos: Uint32, the length of displacementInfoArray.
 
 **newBallsInfo**: `newBall(ball)`
 
 **newBallsInfos**: `lengthOfNewBallsInfos(Uint32) + newBallsInfoArray(lengthOfNewBallsInfos * newBallsInfo)`
 
-## model 
+## base format for message 
 
 `message length(Uint32) + timestamp(Int64) + message type(Uint8) + message body(this is different struct from different message types)`
 
-* message length: Uint32, the length of message, including 'length', 'type' and 'body', the unit of length is bytes.
+* message length: Uint32, the length of message, including 'length', 'type' and 'body', the unit of length is 'byte'.
 * timestamp: a Unix time, the number of seconds elapsed since January 1, 1970 UTC.
 * message type: Uint8, the type of message, type defines the way to decoding the message and what should ends do.
-* message body: this is different struct from message which has different type.
+* message body: this is a struct different from message which has different type.
 
 ## Client send to Server
 
@@ -65,10 +65,10 @@ type value: 1  (0x01)
 
 message body: `userId(Uint64) + nickname(nickname) + roomNumber(Uint32) + troop(Uint8)`
 
-* userId: Uint64, the id of uint64.
+* userId: Uint64, the id of user.
 * nickname: nickname, the name of user
 * roomNumber: Uint32, the room of game.
-* troop: Uint8, the troop of user.
+* troop: Uint8, the troop number of user.
 
 ### <f>2. ready game
 
@@ -107,7 +107,7 @@ message body: `userId(Uint64) + nickname(nickname) + roomNumber(Uint32) + troop(
 * userId: Uint64, the id of uint64.
 * nickname: nickname, the name of user
 * roomNumber: Uint32, the room of game.
-* troop: Uint8, the troop of user.
+* troop: Uint8, the troop number of user.
 
 
 ## Server send to Client
@@ -154,3 +154,11 @@ message body: `collisionInfos(collisionInfos) + displacementInfos(displacementIn
 type value: 10  (0x0a)
 
 message body: `lengthOfSpecialMessage(Uint8) + specialMessage(lengthOfSpecialMessage * Uint8)`
+
+### 11. game over
+
+type value: 11  (0x0b)
+
+message body: `OverType(Uint8)`
+
+* overType: Uint8, the type of over.

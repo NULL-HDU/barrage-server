@@ -32,11 +32,17 @@
 
 **background**: `imageId(Uint8)`
 
-**collisionInfo**: `ballA(ballId) + ballB(ballId) + damageToA(damage) + damageToB(damage)`
+**collisionViewInfo**: `ballA(ballId) + ballB(ballId) + damageToA(damage) + damageToB(damage)`
 
-**collisionInfos**: `lengthOfCollisionInfos(Uint32) + collisionInfoArray(lengthOfCollisionInfos * collisionInfo)`
+**collisionViewInfos**: `lengthOfCollisionViewInfos(Uint32) + collisionViewInfoArray(lengthOfCollisionViewInfos * collisionViewInfo)`
 
-* lengthOfCollisionInfos: Uint32, the length of collisionInfoArray.
+* lengthOfCollisionViewInfos: Uint32, the length of collisionViewInfoArray.
+
+**collisionSocketInfo**: `collisionViewInfo(collisionViewInfo) + AIsAlive(bool) + BIsAlive(bool) + AWillDisappear(bool) + BWillDisappear(bool)`
+
+**collisionSocketInfos**: `lengthOfCollisionSocketInfos(Uint32) + collisionSocketInfoArray(lengthOfCollisionSocketInfos * collisionSocketInfo)`
+
+* lengthOfCollisionSocketInfos: Uint32, the length of collisionSocketInfoArray.
 
 **displacementInfo**: `displacementOfBall(ball)`
 
@@ -109,6 +115,15 @@ message body: `userId(Uint64) + nickname(nickname) + roomNumber(Uint32) + troop(
 * roomNumber: Uint32, the room of game.
 * troop: Uint8, the troop number of user.
 
+### 13. self info
+
+type value: 10  (0x0c)
+
+message body: `collisionSocketInfos(collisionSocketInfos) + displacementInfos(displacementInfos) + newBallsInfos(newBallsInfos)`
+
+* collisionSocketInfos: collisionSocketInfos, the information about ball collision for socket.
+* displacementInfos: displacementInfos, the information about balls displacement, include death info and disappear info.
+* newBallsInfos: newBallsInfos, the information about new balls.
 
 ## Server send to Client
 
@@ -141,11 +156,11 @@ message body: `airplane(ball) + nickname(nickname)`
 
 ### 7. playground info
 
-type value: 7  (0x06)
+type value: 7  (0x07)
 
-message body: `collisionInfos(collisionInfos) + displacementInfos(displacementInfos) + newBallsInfos(newBallsInfos)`
+message body: `collisionViewInfos(collisionViewInfos) + displacementInfos(displacementInfos) + newBallsInfos(newBallsInfos)`
 
-* collisionInfos: collisionInfos, the information about ball collision.
+* collisionViewInfos: collisionViewInfos, the information about ball collisionView for view.
 * displacementInfos: displacementInfos, the information about balls displacement, include death info and disappear info.
 * newBallsInfos: newBallsInfos, the information about new balls.
 

@@ -34,10 +34,6 @@
 
 **collisionViewInfo**: `ballA(ballId) + ballB(ballId) + damageToA(damage) + damageToB(damage)`
 
-**collisionViewInfos**: `lengthOfCollisionViewInfos(Uint32) + collisionViewInfoArray(lengthOfCollisionViewInfos * collisionViewInfo)`
-
-* lengthOfCollisionViewInfos: Uint32, the length of collisionViewInfoArray.
-
 **collisionSocketInfo**: `collisionViewInfo(collisionViewInfo) + AIsAlive(bool) + BIsAlive(bool) + AWillDisappear(bool) + BWillDisappear(bool)`
 
 **collisionSocketInfos**: `lengthOfCollisionSocketInfos(Uint32) + collisionSocketInfoArray(lengthOfCollisionSocketInfos * collisionSocketInfo)`
@@ -54,7 +50,9 @@
 
 **newBallsInfos**: `lengthOfNewBallsInfos(Uint32) + newBallsInfoArray(lengthOfNewBallsInfos * newBallsInfo)`
 
-## base format for message 
+## base form of message 
+
+![message](http://d.pr/i/5Tw+)
 
 `message length(Uint32) + timestamp(Int64) + message type(Uint8) + message body(this is different struct from different message types)`
 
@@ -158,9 +156,9 @@ message body: `airplane(ball) + nickname(nickname)`
 
 type value: 7  (0x07)
 
-message body: `collisionViewInfos(collisionViewInfos) + displacementInfos(displacementInfos) + newBallsInfos(newBallsInfos)`
+message body: `collisionSocketInfos(collisionSocketInfos) + displacementInfos(displacementInfos) + newBallsInfos(newBallsInfos)`
 
-* collisionViewInfos: collisionViewInfos, the information about ball collisionView for view.
+* collisionSocketInfos: collisionSocketInfos, the information about ball collision for socket.
 * displacementInfos: displacementInfos, the information about balls displacement, include death info and disappear info.
 * newBallsInfos: newBallsInfos, the information about new balls.
 

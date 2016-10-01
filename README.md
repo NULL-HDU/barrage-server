@@ -1,4 +1,4 @@
-# Barrage_Service
+# barrage-server
 The backend of barrage.
 
 *this project is in the developing, but it is coded in golang, so I mind that 

@@ -1,4 +1,4 @@
-// Package provide a test server for socket of frontend to test game protocal.
+// Package provide a test service for socket of frontend to test game protocal.
 package main
 
 import (
@@ -32,7 +32,7 @@ func main() {
 	http.Handle("/ws", websocket.Handler(echo))
 	port := "1234"
 
-	logger.Infof("Server start, bind port: %v", port)
+	logger.Infof("Service start, bind port: %v", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		logger.Fatalln("ListenAndServe:", err)
 	}

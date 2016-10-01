@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>WebSocket Test</title>
+  </head>
+
+  <body style="color: rgb(52,149,207);background: rgb(243,238,238);">
+    <script language="javascript" type="text/javascript">
+     var wsUri = "ws://localhost:1234/ws";
+     var output;
+
+     function init() {
+       output = document.getElementById("output");
+       testWebSocket();
+     }
+
+     function testWebSocket() {
+       websocket = new WebSocket(wsUri);
+       websocket.binaryType = "arraybuffer";
+       websocket.onopen = function(evt) {
+         onOpen(evt)
+       };
+       websocket.onclose = function(evt) {
+         onClose(evt)
+       };
+       websocket.onmessage = function(evt) {
+         onMessage(evt)
+       };
+       websocket.onerror = function(evt) {
+         onError(evt)
+       };
+     }
+
+     function onOpen(evt) {
+       writeToScreen("CONNECTED");
+     }
+
+     function onClose(evt) {
+       writeToScreen("DISCONNECTED");
+     }
+
+     function onMessage(evt) {
+       var dv = new DataView(evt.data)
+       var str = ""
+       console.log(dv.byteLength)
+       for(var i=0;i<dv.byteLength;i++){
+         var char = dv.getUint8(i).toString(16)
+         if(char.length < 2) {
+           char = '0' + char
+         }
+         str += char
+         str += " "
+       }
+       writeToScreen('<span style="color: rgb(133,69,117);">RESPONSE(bytes in hex): ' + str +'</span>');
+     }
+
+     function onError(evt) {
+       writeToScreen('<span style="color:rgb(209,71,108);">ERROR:</span> ' + evt.data);
+     }
+
+     function writeToScreen(message) {
+       var pre = document.createElement("p");
+       pre.style.wordWrap = "break-word";
+       pre.innerHTML = message;
+       output.appendChild(pre);
+     }
+
+     window.addEventListener("load", init, false);
+    </script>
+
+    <div id="output" style="margin: 300px auto;text-align: center;">
+      <h2>WebSocket Test</h2>
+    </div>
+  </body>
+
+</html>

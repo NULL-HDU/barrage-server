@@ -2,6 +2,8 @@
 
 *significant '<f>' means be used for future or it may not be used.*
 
+*protocal binary is encoded in big endian*
+
 ## struct
 *the value in parens is the sturct of this unit*
 

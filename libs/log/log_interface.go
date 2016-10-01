@@ -41,7 +41,7 @@ type Logger interface {
 	// Warnf print warn level log.
 	Warnf(format string, v ...interface{})
 	// Errorf print error level log.
-	Errorf(v ...interface{})
+	Errorf(format string, v ...interface{})
 	// Panic is equivalent to Print() followed by a call to panic().
 	Panicf(format string, v ...interface{})
 	// Fatal is equivalent to l.Print() followed by a call to os.Exit(1).

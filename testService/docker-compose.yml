@@ -1,0 +1,10 @@
+testService:
+  image: goself
+  volumes:
+    - ..:/go/src/barrage-server
+  ports:
+    - "1234:1234"
+  working_dir: /go/src/barrage-server/testService
+  command: /bin/bash -f ./start.sh
+  restart: always
+

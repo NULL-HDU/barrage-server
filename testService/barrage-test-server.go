@@ -16,7 +16,7 @@ func init() {
 
 // echo response a test binary to client whenever client connect to server
 func echo(ws *websocket.Conn) {
-	logger.Infof("Connect from %v", ws.LocalAddr())
+	logger.Infof("Connect from %v", ws.RemoteAddr())
 
 	if err := websocket.Message.Send(ws, data.Reply); err != nil {
 		logger.Warnf("Can't send: %s", err)

@@ -55,9 +55,9 @@ type Ball interface {
 
 // Collision do collisoin check and damage calculation for a and b.
 // This function will return the true collisionInfo.
-func Collision(a Ball, b Ball) CollisionInfo {
+// func Collision(a Ball, b Ball) CollisionInfo {
 
-}
+// }
 
 // NewBall creates instance of Ball from the binary.
 //

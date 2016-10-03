@@ -2,7 +2,6 @@
 package log
 
 import (
-	"barrage-server/libs/color"
 	"log"
 )
 
@@ -21,14 +20,6 @@ const (
 	panicPrefix = "[Panic]"
 	fatalPrefix = "[Fatal]"
 )
-
-var levelMap = map[byte]string{
-	InfoLevel:  color.Dye(color.FgGreen, infoPrefix),
-	WarnLevel:  color.Dye(color.FgYellow, warnPrefix),
-	ErrorLevel: color.Dye(color.FgRed, errorPrefix),
-	PanicLevel: color.Dye(color.FgHiRed, panicPrefix),
-	FatalLevel: color.Dye(color.BgRed, fatalPrefix),
-}
 
 // Logger defines the base interface of logger.
 // logger should be open while the program running, so it has no Close method.

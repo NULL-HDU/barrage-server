@@ -1,6 +1,7 @@
 package log
 
 import (
+	"barrage-server/libs/color"
 	"fmt"
 	"io"
 	"log"
@@ -8,6 +9,14 @@ import (
 	"path"
 	"sync"
 	"time"
+)
+
+var (
+	coloredInfo  = color.Dye(color.FgGreen, infoPrefix)
+	coloredWarn  = color.Dye(color.FgYellow, warnPrefix)
+	coloredError = color.Dye(color.FgRed, errorPrefix)
+	coloredPanic = color.Dye(color.FgHiRed, panicPrefix)
+	coloredFatal = color.Dye(color.BgRed, fatalPrefix)
 )
 
 // TwoOutputLogger has two output, one is used to normal output and the other is used to error output,
@@ -140,7 +149,7 @@ func (l *TwoOutputLogger) Infof(format string, v ...interface{}) {
 		return
 	}
 
-	l.outLogger.Printf(levelMap[InfoLevel]+format, v...)
+	l.outLogger.Printf(coloredInfo+format, v...)
 }
 
 // Infoln print info level log.
@@ -149,7 +158,7 @@ func (l *TwoOutputLogger) Infoln(v ...interface{}) {
 		return
 	}
 
-	l.outLogger.Printf(l.repeat(levelMap[InfoLevel], len(v)), v...)
+	l.outLogger.Printf(l.repeat(coloredInfo, len(v)), v...)
 }
 
 // Warnf print wran level log.
@@ -158,7 +167,7 @@ func (l *TwoOutputLogger) Warnf(format string, v ...interface{}) {
 		return
 	}
 
-	l.outLogger.Printf(levelMap[WarnLevel]+format, v...)
+	l.outLogger.Printf(coloredWarn+format, v...)
 }
 
 // Warnln print wran level log.
@@ -167,7 +176,7 @@ func (l *TwoOutputLogger) Warnln(v ...interface{}) {
 		return
 	}
 
-	l.outLogger.Printf(l.repeat(levelMap[WarnLevel], len(v)), v...)
+	l.outLogger.Printf(l.repeat(coloredWarn, len(v)), v...)
 }
 
 // Errorf print error level log.
@@ -176,7 +185,7 @@ func (l *TwoOutputLogger) Errorf(format string, v ...interface{}) {
 		return
 	}
 
-	l.outLogger.Printf(levelMap[ErrorLevel]+format, v...)
+	l.outLogger.Printf(coloredError+format, v...)
 }
 
 // Errorln print error level log.
@@ -185,7 +194,7 @@ func (l *TwoOutputLogger) Errorln(v ...interface{}) {
 		return
 	}
 
-	l.outLogger.Printf(l.repeat(levelMap[ErrorLevel], len(v)), v...)
+	l.outLogger.Printf(l.repeat(coloredError, len(v)), v...)
 }
 
 // Panicf is equivalent to Print() followed by a call to panic().
@@ -195,7 +204,7 @@ func (l *TwoOutputLogger) Panicf(format string, v ...interface{}) {
 		return
 	}
 
-	l.outLogger.Panicf(levelMap[PanicLevel]+format, v...)
+	l.outLogger.Panicf(coloredPanic+format, v...)
 }
 
 // Panicln is equivalent to Print() followed by a call to panic().
@@ -205,7 +214,7 @@ func (l *TwoOutputLogger) Panicln(v ...interface{}) {
 		return
 	}
 
-	l.outLogger.Panicf(l.repeat(levelMap[PanicLevel], len(v)), v...)
+	l.outLogger.Panicf(l.repeat(coloredPanic, len(v)), v...)
 }
 
 // Fatalf is equivalent to l.Print() followed by a call to os.Exit(1).
@@ -215,7 +224,7 @@ func (l *TwoOutputLogger) Fatalf(format string, v ...interface{}) {
 		return
 	}
 
-	l.errLogger.Fatalf(levelMap[FatalLevel]+format, v...)
+	l.errLogger.Fatalf(coloredFatal+format, v...)
 }
 
 // Fatalln is equivalent to l.Print() followed by a call to os.Exit(1).
@@ -225,7 +234,7 @@ func (l *TwoOutputLogger) Fatalln(v ...interface{}) {
 		return
 	}
 
-	l.errLogger.Fatalf(l.repeat(levelMap[FatalLevel], len(v)), v...)
+	l.errLogger.Fatalf(l.repeat(coloredFatal, len(v)), v...)
 }
 
 // MinLevel return the minimize level logger should print.

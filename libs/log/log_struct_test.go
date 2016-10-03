@@ -9,11 +9,11 @@ import (
 )
 
 func TestLogColor(t *testing.T) {
-	t.Log(levelMap[InfoLevel])
-	t.Log(levelMap[WarnLevel])
-	t.Log(levelMap[ErrorLevel])
-	t.Log(levelMap[PanicLevel])
-	t.Log(levelMap[FatalLevel])
+	t.Log(coloredInfo)
+	t.Log(coloredWarn)
+	t.Log(coloredError)
+	t.Log(coloredPanic)
+	t.Log(coloredFatal)
 }
 
 func TestLoggerMinLevelAndSetMinLevel(t *testing.T) {

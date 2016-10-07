@@ -3,6 +3,7 @@ package data
 
 import (
 	"encoding/binary"
+	"time"
 )
 
 const (
@@ -21,12 +22,15 @@ var Reply []byte
 
 // init initial Reply bytes
 func init() {
-	replyLen := int32L + byteL + int64L + int32L + int16L + byteL + int64L + 8*byteL
+	t := time.Date(2016, time.October, 1, 12, 0, 0, 0, time.Local)
+	replyLen := int32L + int64L + byteL + int64L + int32L + int16L + byteL + int64L + 8*byteL
 	Reply = make([]byte, replyLen)
 	length := 0
 
 	binary.BigEndian.PutUint32(Reply[length:], uint32(replyLen))
 	length += int32L
+	binary.BigEndian.PutUint64(Reply[length:], uint64(t.Unix()))
+	length += int64L
 	Reply[length] = byte(99)
 	length += byteL
 	binary.BigEndian.PutUint64(Reply[length:], uint64(99))

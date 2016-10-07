@@ -21,12 +21,12 @@ var Reply []byte
 
 // init initial Reply bytes
 func init() {
-	replyLen := int64L + byteL + int64L + int32L + int16L + byteL + int64L + 8*byteL
+	replyLen := int32L + byteL + int64L + int32L + int16L + byteL + int64L + 8*byteL
 	Reply = make([]byte, replyLen)
 	length := 0
 
-	binary.BigEndian.PutUint64(Reply[length:], uint64(replyLen))
-	length += int64L
+	binary.BigEndian.PutUint32(Reply[length:], uint32(replyLen))
+	length += int32L
 	Reply[length] = byte(99)
 	length += byteL
 	binary.BigEndian.PutUint64(Reply[length:], uint64(99))

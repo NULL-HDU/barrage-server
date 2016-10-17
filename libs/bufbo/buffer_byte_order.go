@@ -23,6 +23,7 @@ type OrderReader interface {
 	Uint64() uint64
 	Float32() float32
 	Float64() float64
+	Str(length int) string
 }
 
 // OrderWriter specifies how to write 16-, 32-, or 64-bit unsigned integers as byte sequences from
@@ -34,6 +35,7 @@ type OrderWriter interface {
 	PutUint64(uint64)
 	PutFloat32(float32)
 	PutFloat64(float64)
+	PutStr(string)
 }
 
 // BytesWriter implement OrderWriter using []byte and binary.ByteOrder.
@@ -94,6 +96,13 @@ func (bsw *BytesWriter) PutFloat32(v float32) {
 func (bsw *BytesWriter) PutFloat64(v float64) {
 	bsw.endian.PutUint64(bsw.w[bsw.length:], math.Float64bits(v))
 	bsw.length += 8
+}
+
+// PutStr writes string into BytesWriter.
+func (bsw *BytesWriter) PutStr(s string) {
+	bs := []byte(s)
+	copy(bsw.w[bsw.length:], bs)
+	bsw.length += len(bs)
 }
 
 // bufWriter implement OrderWriter using io.Buffer and encoding.binary.ByteOrder.
@@ -183,6 +192,16 @@ func (bfw *bufWriter) PutFloat64(v float64) {
 	}
 }
 
+// PutStr writes string into bufWriter.
+func (bfw *bufWriter) PutStr(s string) {
+	bs := []byte(s)
+
+	n, _ := bfw.writer.Write(bs)
+	if n < len(bs) {
+		panic(NotEnoughError)
+	}
+}
+
 // BytesReader implement OrderReader using io.Buffer and encoding.binary.BigEndian.
 type BytesReader struct {
 	r      []byte
@@ -246,4 +265,11 @@ func (bsr *BytesReader) Float64() (result float64) {
 	result = math.Float64frombits(bsr.endian.Uint64(bsr.r[bsr.length:]))
 	bsr.length += 8
 	return
+}
+
+// Str read length bytes then convert them to string
+func (bsr *BytesReader) Str(length int) string {
+	bs := bsr.r[bsr.length : bsr.length+length]
+	bsr.length += length
+	return string(bs)
 }

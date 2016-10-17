@@ -11,6 +11,7 @@ func generateBall() Ball {
 	return &ball{
 		uid:       1234,
 		id:        0,
+		nickname:  "9999 9999",
 		bType:     AirPlane,
 		special:   99,
 		state:     Alive,
@@ -28,6 +29,9 @@ func compare(std Ball, b Ball) error {
 	nball := b.(*ball)
 
 	if dball.uid != nball.uid {
+		return fmt.Errorf("Hope %v, get %v.", dball.uid, nball.uid)
+	}
+	if dball.nickname != nball.nickname {
 		return fmt.Errorf("Hope %v, get %v.", dball.uid, nball.uid)
 	}
 	if dball.location != nball.location {
@@ -66,7 +70,7 @@ func compare(std Ball, b Ball) error {
 
 func TestNewUserAirplane(t *testing.T) {
 	defaultBall := generateBall()
-	newBall, _ := NewUserAirplane(1234, 1, 99, 99.9, 99.9)
+	newBall, _ := NewUserAirplane(1234, "9999 9999", 1, 99, 99.9, 99.9)
 
 	if err := compare(defaultBall, newBall); err != nil {
 		t.Error(err)
@@ -75,7 +79,7 @@ func TestNewUserAirplane(t *testing.T) {
 	b, _ := newBall.MarshalBinary()
 	t.Logf("MarshalBinary result: % x", b)
 
-	_, err := NewUserAirplane(1234, 255, 99, 99.9, 99.9)
+	_, err := NewUserAirplane(1234, "9999 9999", 255, 99, 99.9, 99.9)
 	if !strings.Contains(err.Error(), errInvalidRole.Error()) {
 		t.Errorf("Hope get '%v', but get '%v'.", errInvalidRole, err)
 	}
@@ -96,5 +100,5 @@ func TestNewBallFromBytes(t *testing.T) {
 			t.Errorf("Hope get panic with error 'index out of range', but get '%v'.", err.(error))
 		}
 	}()
-	NewBallFromBytes(b[30:])
+	NewBallFromBytes(b[39:])
 }

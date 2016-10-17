@@ -15,9 +15,9 @@ const (
 	int64L
 )
 
-var replyLen = byteL + int64L + int32L + int16L + byteL + int64L + int64L + int32L
+var replyLen = byteL + int64L + int32L + int16L + byteL + int64L + int64L + int32L + byteL*9
 
-//   99(Uint8) + 99(Uint64) + 99(Uint32) + 99(Uint16) + 99(Uint8) + 99(int64)
+//   99(Uint8) + 99(Uint64) + 99(Uint32) + 99(Uint16) + 99(Uint8) + 99(int64) + "9999 9999"
 func generateBETestBytes() (reply []byte) {
 	reply = make([]byte, replyLen)
 	length := 0
@@ -38,6 +38,8 @@ func generateBETestBytes() (reply []byte) {
 	length += int64L
 	binary.BigEndian.PutUint32(reply[length:], math.Float32bits(float32(99)))
 	length += int32L
+	copy(reply[length:], []byte("9999 9999"))
+	length += byteL * 9
 
 	return
 }
@@ -54,6 +56,7 @@ func TestBytesWriter(t *testing.T) {
 	bw.PutUint64(99)
 	bw.PutFloat64(99)
 	bw.PutFloat32(99)
+	bw.PutStr("9999 9999")
 
 	if r := bytes.Compare(w, generateBETestBytes()); r != 0 {
 		t.Errorf("w should be the same as the result of generateBETestBytes,"+
@@ -97,6 +100,9 @@ func TestBytesReader(t *testing.T) {
 	if result := br.Float32(); result != float32(99) {
 		t.Errorf("8th number should be 99(float32), but get %v.", result)
 	}
+	if result := br.Str(9 * byteL); result != "9999 9999" {
+		t.Errorf("9th string should be '9999 9999', but get %v.", result)
+	}
 
 	defer func() {
 		if err := recover(); !strings.Contains(err.(error).Error(), "index out of range") {
@@ -118,6 +124,7 @@ func TestBufWriter(t *testing.T) {
 	bfw.PutUint64(99)
 	bfw.PutFloat64(99)
 	bfw.PutFloat32(99)
+	bfw.PutStr("9999 9999")
 
 	if r := bytes.Compare(w.Bytes(), generateBETestBytes()); r != 0 {
 		t.Errorf("w should be the same as the result of generateBETestBytes,"+

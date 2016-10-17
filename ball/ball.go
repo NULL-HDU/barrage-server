@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 )
 
 var (
@@ -78,6 +79,7 @@ type Ball interface {
 type ball struct {
 	uid       b.UserID
 	id        b.BallID
+	nickname  string
 	bType     Type
 	hp        hp
 	damage    b.Damage
@@ -93,7 +95,7 @@ type ball struct {
 //
 // hp, damage, speed and attackDir is generate automatically according to roleConf
 // of roleConfTable[r].
-func NewUserAirplane(c b.UserID, r role, s special, x float32, y float32) (Ball, error) {
+func NewUserAirplane(c b.UserID, nickname string, r role, s special, x float32, y float32) (Ball, error) {
 	// TODO: we need a role table. Analyze from json file,
 	//       but now we just write hard.
 	airPlaneRole, ok := roleConfTable[r]
@@ -106,6 +108,7 @@ func NewUserAirplane(c b.UserID, r role, s special, x float32, y float32) (Ball,
 	return &ball{
 		uid:       c,
 		id:        0,
+		nickname:  nickname,
 		bType:     AirPlane,
 		hp:        airPlaneRole.hp,
 		damage:    airPlaneRole.damage,
@@ -169,6 +172,13 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 	bw.PutUint64(uint64(bl.uid))
 	bw.PutUint64(uint64(bl.uid))
 	bw.PutUint16(uint16(bl.id))
+
+	nicknameLen := len([]byte(bl.nickname))
+	if nicknameLen > math.MaxUint8 {
+		return nil, fmt.Errorf("Nickname is too long, hope 255, get %d.", nicknameLen)
+	}
+	bw.PutUint8(uint8(nicknameLen))
+	bw.PutStr(bl.nickname)
 	bw.PutUint8(uint8(bl.bType))
 	bw.PutUint16(uint16(bl.hp))
 	bw.PutUint16(uint16(bl.damage))
@@ -198,6 +208,7 @@ func (bl *ball) UnmarshalBinary(data []byte) error {
 	bl.uid = b.UserID(br.Uint64())
 	bl.uid = b.UserID(br.Uint64())
 	bl.id = b.BallID(br.Uint16())
+	bl.nickname = br.Str(int(br.Uint8()))
 	bl.bType = Type(br.Uint8())
 	bl.hp = hp(br.Uint16())
 	bl.damage = b.Damage(br.Uint16())

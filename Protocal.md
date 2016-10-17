@@ -177,3 +177,9 @@ type value: 11  (0x0b)
 message body: `OverType(Uint8)`
 
 * overType: Uint8, the type of over.
+
+### 212. random userId
+
+type value: 212  (0xd4)
+
+message body: `userId(userId)`

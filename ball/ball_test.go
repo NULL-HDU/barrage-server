@@ -9,7 +9,7 @@ import (
 func generateBall() Ball {
 
 	return &ball{
-		camp:      1234,
+		uid:       1234,
 		id:        0,
 		bType:     AirPlane,
 		special:   99,
@@ -27,8 +27,8 @@ func compare(std Ball, b Ball) error {
 	dball := std.(*ball)
 	nball := b.(*ball)
 
-	if dball.camp != nball.camp {
-		return fmt.Errorf("Hope %v, get %v.", dball.camp, nball.camp)
+	if dball.uid != nball.uid {
+		return fmt.Errorf("Hope %v, get %v.", dball.uid, nball.uid)
 	}
 	if dball.location != nball.location {
 		return fmt.Errorf("Hope %v, get %v.", dball.location, nball.location)
@@ -76,8 +76,8 @@ func TestNewUserAirplane(t *testing.T) {
 	t.Logf("MarshalBinary result: % x", b)
 
 	_, err := NewUserAirplane(1234, 255, 99, 99.9, 99.9)
-	if err != ErrInvalidRole {
-		t.Errorf("Hope get '%v', but get '%v'.", ErrInvalidRole, err)
+	if !strings.Contains(err.Error(), errInvalidRole.Error()) {
+		t.Errorf("Hope get '%v', but get '%v'.", errInvalidRole, err)
 	}
 }
 

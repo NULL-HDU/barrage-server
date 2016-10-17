@@ -1,10 +1,14 @@
 package ball
 
+import (
+	b "barrage-server/base"
+)
+
 // roleConf defines base data of the ball.
 type roleConf struct {
 	id        role
 	hp        hp
-	damage    damage
+	damage    b.Damage
 	speed     speed
 	attackDir attackDir
 }

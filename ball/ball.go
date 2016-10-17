@@ -2,33 +2,27 @@
 package ball
 
 import (
-	"barrage-server/base"
+	b "barrage-server/base"
 	"barrage-server/libs/bufbo"
 	"bytes"
 	"errors"
+	"fmt"
 )
-
-// for guard
-type userID base.UserID
-type ballID base.BallID
-type damage base.Damage
-
-var logger = base.Log
-
-type ballType uint8
-type ballState uint8
 
 var (
-	// ErrInvalidState throw while the state of ball is illegal value.
-	ErrInvalidState = errors.New("Invalid state of ball.")
-	// ErrInvalidRole throw while the role of ball is not included in roleConfTable.
-	ErrInvalidRole = errors.New("Invalid role of ball.")
+	// errInvalidState throw while the state of ball is illegal value.
+	errInvalidState = errors.New("Invalid state of ball.")
+	// errInvalidRole throw while the role of ball is not included in roleConfTable.
+	errInvalidRole = errors.New("Invalid role of ball.")
 )
+
+// State represent the status of ball (alive, deed, disappear)
+type State uint8
 
 const (
 	// Alive  ball alive
 	// isAlive: true, willDisappear: false
-	Alive = ballState(iota)
+	Alive = State(iota + 1)
 	// Dead  ball dead
 	// isAlive: false, willDisappear: false
 	Dead
@@ -37,9 +31,12 @@ const (
 	Disappear
 )
 
+// Type is the type of ball
+type Type uint8
+
 const (
 	// AirPlane user's ball(plane)
-	AirPlane = ballType(iota)
+	AirPlane = Type(iota)
 	// Block block created randomly by server to hinder plane from moving.
 	Block
 	// Bullet bullet created by user plane
@@ -67,28 +64,28 @@ type location struct {
 //
 // Other data should write in the struct.
 type Ball interface {
-	base.CommunicationData
+	b.CommunicationData
 
-	ID() ballID
+	ID() b.BallID
 
 	HP() hp
-	Damage() damage
+	Damage() b.Damage
 	SetHP(hp)
 
 	IsDisappear() bool
 }
 
 type ball struct {
-	camp      userID
-	id        ballID
-	bType     ballType
+	uid       b.UserID
+	id        b.BallID
+	bType     Type
 	hp        hp
-	damage    damage
+	damage    b.Damage
 	role      role
 	special   special
 	speed     speed
 	attackDir attackDir
-	state     ballState
+	state     State
 	location  location
 }
 
@@ -96,17 +93,18 @@ type ball struct {
 //
 // hp, damage, speed and attackDir is generate automatically according to roleConf
 // of roleConfTable[r].
-func NewUserAirplane(c userID, r role, s special, x float32, y float32) (Ball, error) {
+func NewUserAirplane(c b.UserID, r role, s special, x float32, y float32) (Ball, error) {
 	// TODO: we need a role table. Analyze from json file,
 	//       but now we just write hard.
 	airPlaneRole, ok := roleConfTable[r]
 	if !ok {
-		logger.Errorf("%s the role id is %d.\n", ErrInvalidRole, r)
-		return nil, ErrInvalidRole
+		return nil, fmt.Errorf(
+			"%v the role id is %d, While create ball(%d %d) via NewUserAirplane.\n",
+			errInvalidRole, r, c, 0)
 	}
 
 	return &ball{
-		camp:      c,
+		uid:       c,
 		id:        0,
 		bType:     AirPlane,
 		hp:        airPlaneRole.hp,
@@ -132,93 +130,120 @@ func NewBallFromBytes(b []byte) (Ball, error) {
 	return newBall, nil
 }
 
-func (b *ball) ID() ballID {
-	return b.id
+// NewBall create a nil-value ball
+func NewBall() Ball {
+	return &ball{}
 }
 
-func (b *ball) HP() hp {
-	return b.hp
+func (bl *ball) ID() b.BallID {
+	return bl.id
 }
 
-func (b *ball) Damage() damage {
-	return b.damage
+func (bl *ball) HP() hp {
+	return bl.hp
 }
 
-func (b *ball) SetHP(HP hp) {
-	b.hp = HP
+func (bl *ball) Damage() b.Damage {
+	return bl.damage
 }
 
-func (b *ball) IsDisappear() bool {
-	if b.state == Disappear {
+func (bl *ball) SetHP(HP hp) {
+	bl.hp = HP
+}
+
+func (bl *ball) IsDisappear() bool {
+	if bl.state == Disappear {
 		return true
 	}
 
 	return false
 }
 
-func (b *ball) MarshalBinary() (data []byte, err error) {
+func (bl *ball) MarshalBinary() ([]byte, error) {
 	var buffer bytes.Buffer
 	bw := bufbo.NewBEBufWriter(&buffer)
 
-	//camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint16) + damage(damage)+
+	//uid(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint16) + damage(damage)+
 	//role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(Float32) + alive(bool) +
 	//isKilled(bool) + locationCurrent(location)
-	bw.PutUint64(uint64(b.camp))
-	bw.PutUint64(uint64(b.camp))
-	bw.PutUint16(uint16(b.id))
-	bw.PutUint8(uint8(b.bType))
-	bw.PutUint16(uint16(b.hp))
-	bw.PutUint16(uint16(b.damage))
-	bw.PutUint8(uint8(b.role))
-	bw.PutUint16(uint16(b.special))
-	bw.PutUint8(uint8(b.speed))
-	bw.PutFloat32(float32(b.attackDir))
-	switch b.state {
-	case Alive:
-		bw.PutUint8(1)
-		bw.PutUint8(0)
-	case Dead:
-		bw.PutUint8(0)
-		bw.PutUint8(1)
-	case Disappear:
-		bw.PutUint8(0)
-		bw.PutUint8(0)
-	default:
-		return nil, ErrInvalidState
+	bw.PutUint64(uint64(bl.uid))
+	bw.PutUint64(uint64(bl.uid))
+	bw.PutUint16(uint16(bl.id))
+	bw.PutUint8(uint8(bl.bType))
+	bw.PutUint16(uint16(bl.hp))
+	bw.PutUint16(uint16(bl.damage))
+	bw.PutUint8(uint8(bl.role))
+	bw.PutUint16(uint16(bl.special))
+	bw.PutUint8(uint8(bl.speed))
+	bw.PutFloat32(float32(bl.attackDir))
+
+	isAlive, isKilled, err := AnalyseStateToBytes(bl.state)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"%v the state is %d, while marshaling ball(%d %d).\n",
+			err, bl.state, bl.uid, bl.id)
 	}
-	bw.PutFloat32(b.location.x)
-	bw.PutFloat32(b.location.y)
+	bw.PutUint8(isAlive)
+	bw.PutUint8(isKilled)
+	bw.PutFloat32(bl.location.x)
+	bw.PutFloat32(bl.location.y)
 	// 41 bytes
 
-	data = buffer.Bytes()
-	return
+	return buffer.Bytes(), nil
 }
 
-func (b *ball) UnmarshalBinary(data []byte) error {
+func (bl *ball) UnmarshalBinary(data []byte) error {
 	br := bufbo.NewBEBytesReader(data)
 
-	b.camp = userID(br.Uint64())
-	b.camp = userID(br.Uint64())
-	b.id = ballID(br.Uint16())
-	b.bType = ballType(br.Uint8())
-	b.hp = hp(br.Uint16())
-	b.damage = damage(br.Uint16())
-	b.role = role(br.Uint8())
-	b.special = special(br.Uint16())
-	b.speed = speed(br.Uint8())
-	b.attackDir = attackDir(br.Float32())
-	switch isAlive, isKilled := br.Uint8(), br.Uint8(); {
-	case isAlive == 1 && isKilled == 0:
-		b.state = Alive
-	case isAlive == 0 && isKilled == 1:
-		b.state = Dead
-	case isAlive == 0 && isKilled == 0:
-		b.state = Disappear
-	default:
-		return ErrInvalidState
+	bl.uid = b.UserID(br.Uint64())
+	bl.uid = b.UserID(br.Uint64())
+	bl.id = b.BallID(br.Uint16())
+	bl.bType = Type(br.Uint8())
+	bl.hp = hp(br.Uint16())
+	bl.damage = b.Damage(br.Uint16())
+	bl.role = role(br.Uint8())
+	bl.special = special(br.Uint16())
+	bl.speed = speed(br.Uint8())
+	bl.attackDir = attackDir(br.Float32())
+
+	isAlive, isKilled := br.Uint8(), br.Uint8()
+	state, err := AnalyseBytesToState(isAlive, isKilled)
+	if err != nil {
+		return fmt.Errorf(
+			"%v source bytes is isAlive: %d, isKilled: %d, while unmarshaling ball(%d %d).\n",
+			err, isAlive, isKilled, bl.uid, bl.id)
 	}
-	b.location.x = br.Float32()
-	b.location.y = br.Float32()
+	bl.state = state
+	bl.location.x = br.Float32()
+	bl.location.y = br.Float32()
 
 	return nil
+}
+
+// AnalyseStateToBytes analyse state to isKilled and isAlive.
+func AnalyseStateToBytes(s State) (uint8, uint8, error) {
+	switch s {
+	case Alive:
+		return 1, 0, nil
+	case Dead:
+		return 0, 1, nil
+	case Disappear:
+		return 0, 0, nil
+	default:
+		return 0, 0, errInvalidState
+	}
+}
+
+// AnalyseBytesToState analyse isKilled and isAlive to state
+func AnalyseBytesToState(a, k uint8) (State, error) {
+	switch {
+	case a == 1 && k == 0:
+		return Alive, nil
+	case a == 0 && k == 1:
+		return Dead, nil
+	case a == 0 && k == 0:
+		return Disappear, nil
+	default:
+		return 0, errInvalidState
+	}
 }

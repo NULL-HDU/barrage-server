@@ -6,6 +6,13 @@ import (
 
 type msgType uint8
 
+var logger = base.Log
+
+// for guard
+type userID base.UserID
+type ballID base.BallID
+type damage base.Damage
+
 const (
 	// backend -> frontend
 

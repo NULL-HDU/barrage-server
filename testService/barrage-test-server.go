@@ -12,7 +12,7 @@ import (
 var logger log.Logger
 
 func init() {
-	logger = log.NewStdLogger("TestService", log.InfoLevel)
+	logger = log.NewStdLogger(log.InfoLevel)
 }
 
 // echo response a test binary to client whenever client connect to server

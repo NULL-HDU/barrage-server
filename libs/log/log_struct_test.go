@@ -3,6 +3,7 @@ package log
 import (
 	"bufio"
 	"bytes"
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -17,7 +18,7 @@ func TestLogColor(t *testing.T) {
 }
 
 func TestLoggerMinLevelAndSetMinLevel(t *testing.T) {
-	l := NewStdLogger("Testing", InfoLevel)
+	l := NewStdLogger(InfoLevel)
 
 	if level := l.MinLevel(); level != InfoLevel {
 		t.Errorf("MinLevel: the minLevel of logger should be %d, but get %d.", InfoLevel, level)
@@ -31,7 +32,7 @@ func TestLoggerMinLevelAndSetMinLevel(t *testing.T) {
 
 func TestLoggerFormat(t *testing.T) {
 	var testBuffer bytes.Buffer
-	l := NewSimpleLogger(&testBuffer, "Testing", InfoLevel)
+	l := NewSimpleLogger(&testBuffer, InfoLevel)
 
 	l.Infoln("testing_info", 1, 2, 3)
 	info := "testing_info 1 2 3\n"
@@ -90,4 +91,25 @@ func TestNewSimpleFileLogger(t *testing.T) {
 
 	w.Close()
 	os.Remove(filename)
+}
+
+// TODO: modify NewSimpleFileLogger to NewSimpleLogger with template file.
+var benchMarkTestFile1, file1 = NewSimpleFileLogger("./", "self", InfoLevel)
+var _, file2 = NewSimpleFileLogger("./", "log", InfoLevel)
+var logger = log.New(file2, ">>", log.Lshortfile|log.LstdFlags)
+
+// BenchmarkSelfLogger run benchmark test for TwoOutputLogger.
+func BenchmarkSelfLogger(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchMarkTestFile1.Infof("TwoOutputLogger test %s.\n", "testing")
+		benchMarkTestFile1.Infoln("TwoOutputLogger test ", "testing")
+	}
+}
+
+// BenchmarkSelfLogger run benchmark test for log.Logger.
+func BenchmarkDefaultLogger(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		logger.Printf("log.Logger test %s.", "testing")
+		logger.Println("log.Logger test ", "testing")
+	}
 }

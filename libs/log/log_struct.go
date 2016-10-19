@@ -4,7 +4,6 @@ import (
 	"barrage-server/libs/color"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path"
 	"sync"
@@ -22,25 +21,26 @@ var (
 // TwoOutputLogger has two output, one is used to normal output and the other is used to error output,
 // it is goroutine safe.
 type TwoOutputLogger struct {
-	minLevel  byte
-	m         sync.RWMutex
-	outLogger *log.Logger
-	errLogger *log.Logger
+	minLevel byte
+	prefix   string
+	m        sync.RWMutex
+	out      io.Writer
+	err      io.Writer
 }
 
 // NewStdLogger create and return a new TwoOutputLogger which implements Logger,
-// wrapped log.Logger is created with io.Stdout.
+// wrapped io.Stdout.
 //
 // all logs should be writed by logger, so before creating logger, any error will panic,
 // so all New** function won't return error
-func NewStdLogger(prefix string, level byte) *TwoOutputLogger {
+func NewStdLogger(level byte) *TwoOutputLogger {
 	if level > FatalLevel {
 		panic("Your min level of logger is too high!")
 	}
 	return &TwoOutputLogger{
-		minLevel:  level,
-		outLogger: log.New(os.Stdout, prefix, defaultFlag),
-		errLogger: log.New(os.Stderr, prefix, defaultFlag),
+		minLevel: level,
+		out:      os.Stdout,
+		err:      os.Stderr,
 	}
 }
 
@@ -55,7 +55,8 @@ func NewSimpleFileLogger(dirname string, prefix string, level byte) (*TwoOutputL
 	}
 
 	now := time.Now()
-	filename := fmt.Sprintf("%d%02d%02d_%02d_%02d.log",
+	filename := fmt.Sprintf("%s_%d%02d%02d_%02d_%02d.log",
+		prefix,
 		now.Year(),
 		now.Month(),
 		now.Day(),
@@ -68,18 +69,16 @@ func NewSimpleFileLogger(dirname string, prefix string, level byte) (*TwoOutputL
 		panic(err)
 	}
 
-	l := log.New(w, prefix, defaultFlag)
-
 	return &TwoOutputLogger{
-		minLevel:  level,
-		outLogger: l,
-		errLogger: l,
+		minLevel: level,
+		out:      w,
+		err:      w,
 	}, w
 }
 
 // NewSimpleLogger create and return a new TwoOutputLogger which implements Logger,
 // this Logger use one io.Writer as output and error output.
-func NewSimpleLogger(w io.Writer, prefix string, level byte) *TwoOutputLogger {
+func NewSimpleLogger(w io.Writer, level byte) *TwoOutputLogger {
 	if level > FatalLevel {
 		panic("Your min level of logger is too high!")
 	}
@@ -87,17 +86,15 @@ func NewSimpleLogger(w io.Writer, prefix string, level byte) *TwoOutputLogger {
 		panic("Your w io.Writer should not be nil.")
 	}
 
-	l := log.New(w, prefix, defaultFlag)
-
 	return &TwoOutputLogger{
-		minLevel:  level,
-		outLogger: l,
-		errLogger: l,
+		minLevel: level,
+		out:      w,
+		err:      w,
 	}
 }
 
 // NewLogger create and return a new TwoOutputLogger which implements Logger.
-func NewLogger(out io.Writer, err io.Writer, prefix string, level byte) *TwoOutputLogger {
+func NewLogger(out io.Writer, err io.Writer, level byte) *TwoOutputLogger {
 	if level > FatalLevel {
 		panic("Your min level of logger is too high!")
 	}
@@ -109,132 +106,183 @@ func NewLogger(out io.Writer, err io.Writer, prefix string, level byte) *TwoOutp
 		panic("Your error output io.Writer should not be nil.")
 	}
 	return &TwoOutputLogger{
-		minLevel:  level,
-		outLogger: log.New(out, prefix, defaultFlag),
-		errLogger: log.New(err, prefix, defaultFlag),
+		minLevel: level,
+		out:      out,
+		err:      err,
 	}
 }
 
 // levelCheck check print whether is bigger than minLevel, if it is true return ture
 func (l *TwoOutputLogger) levelCheck(printLevel byte) bool {
-	if l.MinLevel() <= printLevel {
+	if l.minLevel <= printLevel {
 		return true
 	}
 
 	return false
 }
 
-// repeat create a default format string for ***ln
-// format stirng: [prefix%v %v %v\n]
-func (l *TwoOutputLogger) repeat(prefix string, count int) string {
-	s := "%v "
-	pl := len(prefix)
-	rl := len(s) * count
-	b := make([]byte, rl+pl)
-	copy(b, prefix)
-
-	nb := b[pl:]
-	bp := copy(nb, s)
-	for bp < len(nb) {
-		copy(nb[bp:], nb[:bp])
-		bp *= 2
-	}
-	b[pl+rl-1] = '\n'
-	return string(b)
-}
-
 // Infof print info level log.
 func (l *TwoOutputLogger) Infof(format string, v ...interface{}) {
+	s := generateLogContent(1, coloredInfo, format, v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
 	if !l.levelCheck(InfoLevel) {
 		return
 	}
 
-	l.outLogger.Printf(coloredInfo+format, v...)
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Infoln print info level log.
 func (l *TwoOutputLogger) Infoln(v ...interface{}) {
+	s := generateLogContent(1, coloredInfo, "", v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
 	if !l.levelCheck(InfoLevel) {
 		return
 	}
 
-	l.outLogger.Printf(l.repeat(coloredInfo, len(v)), v...)
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
 }
 
-// Warnf print wran level log.
-func (l *TwoOutputLogger) Warnf(format string, v ...interface{}) {
-	if !l.levelCheck(WarnLevel) {
+// Fatalf print fatal level log.
+func (l *TwoOutputLogger) Fatalf(format string, v ...interface{}) {
+	s := generateLogContent(1, coloredFatal, format, v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
+	if !l.levelCheck(FatalLevel) {
 		return
 	}
 
-	l.outLogger.Printf(coloredWarn+format, v...)
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
+	os.Exit(1)
 }
 
-// Warnln print wran level log.
-func (l *TwoOutputLogger) Warnln(v ...interface{}) {
-	if !l.levelCheck(WarnLevel) {
+// Fatalln print fatal level log.
+func (l *TwoOutputLogger) Fatalln(v ...interface{}) {
+	s := generateLogContent(1, coloredFatal, "", v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
+	if !l.levelCheck(FatalLevel) {
 		return
 	}
 
-	l.outLogger.Printf(l.repeat(coloredWarn, len(v)), v...)
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
+	os.Exit(1)
+}
+
+// Panicf print panic level log.
+func (l *TwoOutputLogger) Panicf(format string, v ...interface{}) {
+	s := generateLogContent(1, coloredPanic, format, v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
+	if !l.levelCheck(PanicLevel) {
+		return
+	}
+
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
+	panic(s)
+}
+
+// Panicln print panic level log.
+func (l *TwoOutputLogger) Panicln(v ...interface{}) {
+	s := generateLogContent(1, coloredPanic, "", v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
+	if !l.levelCheck(PanicLevel) {
+		return
+	}
+
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
+	panic(s)
 }
 
 // Errorf print error level log.
 func (l *TwoOutputLogger) Errorf(format string, v ...interface{}) {
+	s := generateLogContent(1, coloredError, format, v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
 	if !l.levelCheck(ErrorLevel) {
 		return
 	}
 
-	l.outLogger.Printf(coloredError+format, v...)
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Errorln print error level log.
 func (l *TwoOutputLogger) Errorln(v ...interface{}) {
+	s := generateLogContent(1, coloredError, "", v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
 	if !l.levelCheck(ErrorLevel) {
 		return
 	}
 
-	l.outLogger.Printf(l.repeat(coloredError, len(v)), v...)
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
 }
 
-// Panicf is equivalent to Print() followed by a call to panic().
-// just call logger.Panic
-func (l *TwoOutputLogger) Panicf(format string, v ...interface{}) {
-	if !l.levelCheck(PanicLevel) {
+// Warnf print warn level log.
+func (l *TwoOutputLogger) Warnf(format string, v ...interface{}) {
+	s := generateLogContent(1, coloredWarn, format, v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
+	if !l.levelCheck(WarnLevel) {
 		return
 	}
 
-	l.outLogger.Panicf(coloredPanic+format, v...)
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
 }
 
-// Panicln is equivalent to Print() followed by a call to panic().
-// just call logger.Panic
-func (l *TwoOutputLogger) Panicln(v ...interface{}) {
-	if !l.levelCheck(PanicLevel) {
+// Warnln print warn level log.
+func (l *TwoOutputLogger) Warnln(v ...interface{}) {
+	s := generateLogContent(1, coloredWarn, "", v...)
+
+	l.m.Lock()
+	defer l.m.Unlock()
+	if !l.levelCheck(WarnLevel) {
 		return
 	}
 
-	l.outLogger.Panicf(l.repeat(coloredPanic, len(v)), v...)
-}
-
-// Fatalf is equivalent to l.Print() followed by a call to os.Exit(1).
-// just call logger.Fatal
-func (l *TwoOutputLogger) Fatalf(format string, v ...interface{}) {
-	if !l.levelCheck(FatalLevel) {
-		return
+	_, err := l.out.Write([]byte(s))
+	if err != nil {
+		panic(err)
 	}
-
-	l.errLogger.Fatalf(coloredFatal+format, v...)
-}
-
-// Fatalln is equivalent to l.Print() followed by a call to os.Exit(1).
-// just call logger.Fatal
-func (l *TwoOutputLogger) Fatalln(v ...interface{}) {
-	if !l.levelCheck(FatalLevel) {
-		return
-	}
-
-	l.errLogger.Fatalf(l.repeat(coloredFatal, len(v)), v...)
 }
 
 // MinLevel return the minimize level logger should print.

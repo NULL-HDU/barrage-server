@@ -25,5 +25,5 @@ var Log log.Logger
 
 // init
 func init() {
-	Log = log.NewStdLogger("Dev: ", log.InfoLevel)
+	Log = log.NewStdLogger(log.InfoLevel)
 }

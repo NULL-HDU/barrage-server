@@ -33,7 +33,7 @@ func echo(ws *websocket.Conn) {
 		}
 		logger.Infof("Receive: % x\n", cache)
 
-		if err := websocket.Message.Send(ws, data.Reply); err != nil {
+		if err := websocket.Message.Send(ws, cache); err != nil {
 			logger.Errorf("Can't send: %s", err)
 			break
 		}

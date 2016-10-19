@@ -8,11 +8,6 @@ import (
 	"fmt"
 )
 
-const (
-	// unit: byte
-	lengthOfCollisionInfo = 28
-)
-
 type fullBallID struct {
 	uid b.UserID
 	id  b.BallID
@@ -33,6 +28,11 @@ func (ci *collisionInfo) AInfo() (b.UserID, b.BallID, b.Damage, ball.State) {
 // BInfo return the ballId, damage and state of B.
 func (ci *collisionInfo) BInfo() (b.UserID, b.BallID, b.Damage, ball.State) {
 	return ci.ballIDs[1].uid, ci.ballIDs[1].id, ci.damages[1], ci.states[1]
+}
+
+// Size ...
+func (ci *collisionInfo) Size() int {
+	return 28
 }
 
 // MarshalBinary ...
@@ -111,32 +111,39 @@ func (ci *collisionInfo) UnmarshalBinary(data []byte) error {
 // CollisionsInfo is used for collision informations transimission.
 type CollisionsInfo struct {
 	length         uint32
-	collisionInfos []collisionInfo
+	CollisionInfos []collisionInfo
 }
 
 // Length return length
-func (csi *CollisionsInfo) Length() uint32 {
-	return csi.length
+func (csi *CollisionsInfo) Length() int {
+	return int(csi.length)
 }
 
-// SizeOfItem return number of bytes of collisionInfo.
-func (csi *CollisionsInfo) SizeOfItem() int {
-	return lengthOfCollisionInfo
-}
-
-// Item return item of collisionInfos.
+// Item return item of CollisionInfos.
 func (csi *CollisionsInfo) Item(index int) b.CommunicationData {
-	return &csi.collisionInfos[index]
+	return &csi.CollisionInfos[index]
 }
 
-// NewItems init collisionInfos
+// Size return the number of bytes after marshed
+func (csi *CollisionsInfo) Size() int {
+	sum := 4
+	for _, v := range csi.CollisionInfos {
+		sum += v.Size()
+	}
+	return sum
+}
+
+// NewItems init CollisionInfos
 func (csi *CollisionsInfo) NewItems(length uint32) {
-	csi.collisionInfos = make([]collisionInfo, length)
+	csi.CollisionInfos = make([]collisionInfo, length)
 	csi.length = length
 }
 
-// Crop crop collisionInfos
+// Crop crop CollisionInfos
 func (csi *CollisionsInfo) Crop(length uint32) {
-	csi.collisionInfos = csi.collisionInfos[:length]
+	if csi.length == length {
+		return
+	}
+	csi.CollisionInfos = csi.CollisionInfos[:length]
 	csi.length = length
 }

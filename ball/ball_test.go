@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+var testBallSize = 42 + 9
+
 func generateBall() Ball {
 
 	return &ball{
@@ -78,6 +80,14 @@ func TestNewUserAirplane(t *testing.T) {
 
 	b, _ := newBall.MarshalBinary()
 	t.Logf("MarshalBinary result: % x", b)
+
+	if bSize := len(b); bSize != testBallSize {
+		t.Errorf("Hope get %v, but get %v", testBallSize, bSize)
+	}
+
+	if newBallSize := newBall.Size(); newBallSize != testBallSize {
+		t.Errorf("Hope get %v, but get %v", testBallSize, newBallSize)
+	}
 
 	_, err := NewUserAirplane(1234, "9999 9999", 255, 99, 99.9, 99.9)
 	if !strings.Contains(err.Error(), errInvalidRole.Error()) {

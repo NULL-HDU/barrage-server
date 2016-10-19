@@ -67,12 +67,14 @@ type location struct {
 type Ball interface {
 	b.CommunicationData
 
+	UID() b.UserID
 	ID() b.BallID
 
 	HP() hp
 	Damage() b.Damage
 	SetHP(hp)
 
+	// Position() (x, y float32)
 	IsDisappear() bool
 }
 
@@ -138,6 +140,10 @@ func NewBall() Ball {
 	return &ball{}
 }
 
+func (bl *ball) UID() b.UserID {
+	return bl.uid
+}
+
 func (bl *ball) ID() b.BallID {
 	return bl.id
 }
@@ -154,12 +160,20 @@ func (bl *ball) SetHP(HP hp) {
 	bl.hp = HP
 }
 
+// func (bl *ball) Position() (x, y float32) {
+// 	return bl.location.x, bl.location.y
+// }
+
 func (bl *ball) IsDisappear() bool {
 	if bl.state == Disappear {
 		return true
 	}
 
 	return false
+}
+
+func (bl *ball) Size() int {
+	return 42 + len(bl.nickname)
 }
 
 func (bl *ball) MarshalBinary() ([]byte, error) {
@@ -173,7 +187,7 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 	bw.PutUint64(uint64(bl.uid))
 	bw.PutUint16(uint16(bl.id))
 
-	nicknameLen := len([]byte(bl.nickname))
+	nicknameLen := len(bl.nickname)
 	if nicknameLen > math.MaxUint8 {
 		return nil, fmt.Errorf("Nickname is too long, hope 255, get %d.", nicknameLen)
 	}

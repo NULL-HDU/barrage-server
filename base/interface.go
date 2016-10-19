@@ -16,4 +16,7 @@ const (
 type CommunicationData interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
+
+	// Size provide the number of bytes after CommunicationData marshaled.
+	Size() int
 }

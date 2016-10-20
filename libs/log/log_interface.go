@@ -2,7 +2,6 @@
 package log
 
 import (
-	"fmt"
 	"runtime"
 	"strings"
 	"time"
@@ -57,14 +56,13 @@ type Logger interface {
 }
 
 // getInvokerLocation get filename and line according to skipNumber.
-func getInvokerLocation(skipNumber int) string {
+func getInvokerLocation(skipNumber int) (simpleFileName string, line int) {
 	//Get the file and line of the invoker
 	_, file, line, ok := runtime.Caller(skipNumber)
 	if !ok {
-		return ""
+		return
 	}
 
-	var simpleFileName string
 	//Only get the file basename(the same as os.path.basename in python3)
 	if index := strings.LastIndex(file, "/"); index > 0 {
 		simpleFileName = file[index+1 : len(file)]
@@ -72,48 +70,61 @@ func getInvokerLocation(skipNumber int) string {
 		simpleFileName = file
 	}
 
-	return fmt.Sprintf("%s:%d", simpleFileName, line)
+	return
 }
 
-// generateLogContent create log content.
-// its formate is "prefix date clock filePosition - levelPrefix"
+// Cheap integer to fixed-width decimal ASCII.  Give a negative width to avoid zero-padding.
+func itoa(buf *[]byte, i int, wid int) {
+	// Assemble decimal in reverse order.
+	var b [20]byte
+	bp := len(b) - 1
+	for i >= 10 || wid > 1 {
+		wid--
+		q := i / 10
+		b[bp] = byte('0' + i - q*10)
+		bp--
+		i = q
+	}
+	// i < 10
+	b[bp] = byte('0' + i)
+	*buf = append(*buf, b[bp:]...)
+}
+
+// generateLogHead create log Head.
+// its formate is " date clock filePosition - levelPrefix "
 //
 // pos (position) is the relative position where calling log method relatives to
-// generateLogContent in function invocation stack.
-func generateLogContent(
-	pos uint,
-	levelPrefix,
-	format string,
-	v ...interface{}) string {
+// generateLogHead in function invocation stack.
+func generateLogHead(buf *[]byte, pos uint, levelPrefix string) {
+	*buf = (*buf)[:0]
 
+	*buf = append(*buf, ' ')
+
+	// timestamp
 	t := time.Now()
 	year, month, day := t.Date()
+	itoa(buf, year, 4)
+	*buf = append(*buf, '/')
+	itoa(buf, int(month), 2)
+	*buf = append(*buf, '/')
+	itoa(buf, day, 2)
+	*buf = append(*buf, ' ')
 	hour, min, sec := t.Clock()
+	itoa(buf, hour, 2)
+	*buf = append(*buf, ':')
+	itoa(buf, min, 2)
+	*buf = append(*buf, ':')
+	itoa(buf, sec, 2)
 
-	//TODO: to be faster!
-	// fmt.Sprintf is too slow, to use more underline api.
-	// -----
-	//calculate the aim function position on the calling goroutine's stack
-	skipNumber := int(pos) + 2
-	baseInfo := fmt.Sprintf(" %4d/%02d/%02d %02d:%02d:%02d %s - %s ",
-		year, month, day,
-		hour, min, sec,
-		getInvokerLocation(skipNumber),
-		levelPrefix,
-	)
-	// -----
+	*buf = append(*buf, ' ')
 
-	var result string
-	if len(format) > 0 {
-		//generate accroding to format
-		result = fmt.Sprintf((baseInfo + format), v...)
-	} else {
-		//generate directly
-		vLen := len(v)
-		params := make([]interface{}, (vLen + 1))
-		params[0] = baseInfo
-		copy(params[1:], v)
-		result = fmt.Sprintln(params...)
-	}
-	return result
+	// filename and line
+	filename, line := getInvokerLocation(int(pos) + 2)
+	*buf = append(*buf, filename...)
+	*buf = append(*buf, ':')
+	itoa(buf, line, -1)
+
+	*buf = append(*buf, " - "...)
+	*buf = append(*buf, levelPrefix...)
+	*buf = append(*buf, ' ')
 }

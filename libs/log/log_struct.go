@@ -22,8 +22,8 @@ var (
 // it is goroutine safe.
 type TwoOutputLogger struct {
 	minLevel byte
-	prefix   string
 	m        sync.RWMutex
+	buf      []byte // for accumulating text to write
 	out      io.Writer
 	err      io.Writer
 }
@@ -123,7 +123,7 @@ func (l *TwoOutputLogger) levelCheck(printLevel byte) bool {
 
 // Infof print info level log.
 func (l *TwoOutputLogger) Infof(format string, v ...interface{}) {
-	s := generateLogContent(1, coloredInfo, format, v...)
+	s := fmt.Sprintf(format, v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -131,7 +131,10 @@ func (l *TwoOutputLogger) Infof(format string, v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredInfo)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -139,7 +142,7 @@ func (l *TwoOutputLogger) Infof(format string, v ...interface{}) {
 
 // Infoln print info level log.
 func (l *TwoOutputLogger) Infoln(v ...interface{}) {
-	s := generateLogContent(1, coloredInfo, "", v...)
+	s := fmt.Sprintln(v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -147,7 +150,10 @@ func (l *TwoOutputLogger) Infoln(v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredInfo)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -155,7 +161,7 @@ func (l *TwoOutputLogger) Infoln(v ...interface{}) {
 
 // Fatalf print fatal level log.
 func (l *TwoOutputLogger) Fatalf(format string, v ...interface{}) {
-	s := generateLogContent(1, coloredFatal, format, v...)
+	s := fmt.Sprintf(format, v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -163,7 +169,10 @@ func (l *TwoOutputLogger) Fatalf(format string, v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredFatal)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -172,7 +181,7 @@ func (l *TwoOutputLogger) Fatalf(format string, v ...interface{}) {
 
 // Fatalln print fatal level log.
 func (l *TwoOutputLogger) Fatalln(v ...interface{}) {
-	s := generateLogContent(1, coloredFatal, "", v...)
+	s := fmt.Sprintln(v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -180,7 +189,10 @@ func (l *TwoOutputLogger) Fatalln(v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredFatal)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -189,7 +201,7 @@ func (l *TwoOutputLogger) Fatalln(v ...interface{}) {
 
 // Panicf print panic level log.
 func (l *TwoOutputLogger) Panicf(format string, v ...interface{}) {
-	s := generateLogContent(1, coloredPanic, format, v...)
+	s := fmt.Sprintf(format, v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -197,7 +209,10 @@ func (l *TwoOutputLogger) Panicf(format string, v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredPanic)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -206,7 +221,7 @@ func (l *TwoOutputLogger) Panicf(format string, v ...interface{}) {
 
 // Panicln print panic level log.
 func (l *TwoOutputLogger) Panicln(v ...interface{}) {
-	s := generateLogContent(1, coloredPanic, "", v...)
+	s := fmt.Sprintln(v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -214,7 +229,10 @@ func (l *TwoOutputLogger) Panicln(v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredPanic)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -223,7 +241,7 @@ func (l *TwoOutputLogger) Panicln(v ...interface{}) {
 
 // Errorf print error level log.
 func (l *TwoOutputLogger) Errorf(format string, v ...interface{}) {
-	s := generateLogContent(1, coloredError, format, v...)
+	s := fmt.Sprintf(format, v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -231,7 +249,10 @@ func (l *TwoOutputLogger) Errorf(format string, v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredError)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -239,7 +260,7 @@ func (l *TwoOutputLogger) Errorf(format string, v ...interface{}) {
 
 // Errorln print error level log.
 func (l *TwoOutputLogger) Errorln(v ...interface{}) {
-	s := generateLogContent(1, coloredError, "", v...)
+	s := fmt.Sprintln(v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -247,7 +268,10 @@ func (l *TwoOutputLogger) Errorln(v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredError)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -255,7 +279,7 @@ func (l *TwoOutputLogger) Errorln(v ...interface{}) {
 
 // Warnf print warn level log.
 func (l *TwoOutputLogger) Warnf(format string, v ...interface{}) {
-	s := generateLogContent(1, coloredWarn, format, v...)
+	s := fmt.Sprintf(format, v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -263,7 +287,10 @@ func (l *TwoOutputLogger) Warnf(format string, v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredWarn)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}
@@ -271,7 +298,7 @@ func (l *TwoOutputLogger) Warnf(format string, v ...interface{}) {
 
 // Warnln print warn level log.
 func (l *TwoOutputLogger) Warnln(v ...interface{}) {
-	s := generateLogContent(1, coloredWarn, "", v...)
+	s := fmt.Sprintln(v...)
 
 	l.m.Lock()
 	defer l.m.Unlock()
@@ -279,7 +306,10 @@ func (l *TwoOutputLogger) Warnln(v ...interface{}) {
 		return
 	}
 
-	_, err := l.out.Write([]byte(s))
+	generateLogHead(&l.buf, 1, coloredWarn)
+	l.buf = append(l.buf, s...)
+
+	_, err := l.out.Write(l.buf)
 	if err != nil {
 		panic(err)
 	}

@@ -93,9 +93,8 @@ func TestNewSimpleFileLogger(t *testing.T) {
 	os.Remove(filename)
 }
 
-// TODO: modify NewSimpleFileLogger to NewSimpleLogger with template file.
-var benchMarkTestFile1, file1 = NewSimpleFileLogger("./", "self", InfoLevel)
-var _, file2 = NewSimpleFileLogger("./", "log", InfoLevel)
+var benchMarkTestFile1, file1 = NewSimpleFileLogger(os.TempDir(), "self", InfoLevel)
+var _, file2 = NewSimpleFileLogger(os.TempDir(), "log", InfoLevel)
 var logger = log.New(file2, ">>", log.Lshortfile|log.LstdFlags)
 
 // BenchmarkSelfLogger run benchmark test for TwoOutputLogger.

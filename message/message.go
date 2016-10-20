@@ -4,14 +4,9 @@ import (
 	"barrage-server/base"
 )
 
-type msgType uint8
-
 var logger = base.Log
 
-// for guard
-type userID base.UserID
-type ballID base.BallID
-type damage base.Damage
+type msgType uint8
 
 const (
 	// backend -> frontend
@@ -43,10 +38,36 @@ const (
 // do, discard the message or continue to analyze its body according the message type to create InfoPkg.
 type Message interface {
 	base.CommunicationData
-	Len() uint32
+	Len() int
 	Type() msgType
-	Timestmap() int64
+	Timestamp() int64
 	Body() []byte
+}
+
+type msg struct {
+	body      []byte
+	t         msgType
+	timestamp int64
+}
+
+// Len ...
+func (m *msg) Len() int {
+	return len(m.body) + 4 + 1 + 8
+}
+
+// Type ...
+func (m *msg) Type() msgType {
+	return m.t
+}
+
+// Timestamp ...
+func (m *msg) Timestamp() int64 {
+	return m.timestamp
+}
+
+// Body ...
+func (m *msg) Body() []byte {
+	return m.body
 }
 
 // CreateMessage creates instance of Message from given params, length and timestamp of the

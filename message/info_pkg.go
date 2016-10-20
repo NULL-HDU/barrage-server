@@ -143,15 +143,15 @@ func (di *DisconnectInfo) Body() Info {
 
 // Size return the number of bytes after marshaled.
 func (di *DisconnectInfo) Size() int {
-	return 12
+	return 8
 }
 
 // MarshalBinary marshal DisconnectInfo to bytes
 func (di *DisconnectInfo) MarshalBinary() ([]byte, error) {
-	bs := make([]byte, 12)
+	bs := make([]byte, 8)
 	bw := bufbo.NewBEBytesWriter(bs)
 
-	bw.PutUint64(uint64(di.UID))
+	bw.PutUint32(uint32(di.UID))
 	bw.PutUint32(uint32(di.RID))
 
 	return bs, nil
@@ -161,7 +161,7 @@ func (di *DisconnectInfo) MarshalBinary() ([]byte, error) {
 func (di *DisconnectInfo) UnmarshalBinary(bs []byte) error {
 	br := bufbo.NewBEBytesReader(bs)
 
-	di.UID = b.UserID(br.Uint64())
+	di.UID = b.UserID(br.Uint32())
 	di.RID = b.RoomID(br.Uint32())
 
 	return nil
@@ -188,7 +188,7 @@ func (ci *ConnectInfo) Body() Info {
 
 // Size return the number of bytes after marshaled.
 func (ci *ConnectInfo) Size() int {
-	return 14 + len(ci.Nickname)
+	return 10 + len(ci.Nickname)
 }
 
 // MarshalBinary marshal ConnectInfo to bytes
@@ -196,7 +196,7 @@ func (ci *ConnectInfo) MarshalBinary() ([]byte, error) {
 	var buffer bytes.Buffer
 	bfw := bufbo.NewBEBufWriter(&buffer)
 
-	bfw.PutUint64(uint64(ci.UID))
+	bfw.PutUint32(uint32(ci.UID))
 	bfw.PutUint8(uint8(len(ci.Nickname)))
 	bfw.PutStr(ci.Nickname)
 	bfw.PutUint32(uint32(ci.RID))
@@ -209,7 +209,7 @@ func (ci *ConnectInfo) MarshalBinary() ([]byte, error) {
 func (ci *ConnectInfo) UnmarshalBinary(bs []byte) error {
 	br := bufbo.NewBEBytesReader(bs)
 
-	ci.UID = b.UserID(br.Uint64())
+	ci.UID = b.UserID(br.Uint32())
 	ci.Nickname = br.Str(int(br.Uint8()))
 	ci.RID = b.RoomID(br.Uint32())
 	ci.Troop = br.Uint8()

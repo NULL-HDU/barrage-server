@@ -173,7 +173,7 @@ func (bl *ball) IsDisappear() bool {
 }
 
 func (bl *ball) Size() int {
-	return 42 + len(bl.nickname)
+	return 34 + len(bl.nickname)
 }
 
 func (bl *ball) MarshalBinary() ([]byte, error) {
@@ -183,8 +183,8 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 	//uid(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint16) + damage(damage)+
 	//role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(Float32) + alive(bool) +
 	//isKilled(bool) + locationCurrent(location)
-	bw.PutUint64(uint64(bl.uid))
-	bw.PutUint64(uint64(bl.uid))
+	bw.PutUint32(uint32(bl.uid))
+	bw.PutUint32(uint32(bl.uid))
 	bw.PutUint16(uint16(bl.id))
 
 	nicknameLen := len(bl.nickname)
@@ -211,7 +211,7 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 	bw.PutUint8(isKilled)
 	bw.PutFloat32(bl.location.x)
 	bw.PutFloat32(bl.location.y)
-	// 41 bytes
+	// 34 + bytes
 
 	return buffer.Bytes(), nil
 }
@@ -219,8 +219,8 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 func (bl *ball) UnmarshalBinary(data []byte) error {
 	br := bufbo.NewBEBytesReader(data)
 
-	bl.uid = b.UserID(br.Uint64())
-	bl.uid = b.UserID(br.Uint64())
+	bl.uid = b.UserID(br.Uint32())
+	bl.uid = b.UserID(br.Uint32())
 	bl.id = b.BallID(br.Uint16())
 	bl.nickname = br.Str(int(br.Uint8()))
 	bl.bType = Type(br.Uint8())

@@ -7,7 +7,7 @@
 ## struct
 *the value in parens is the sturct of this unit*
 
-**userId**: `userId(Uint64)`
+**userId**: `userId(Uint32)`
 
 **bool**: `bool(Uint8)`
 
@@ -22,7 +22,7 @@
 
 **ballId**: `userId(userId)+id(Uint16)`
 
-* userId: Uint64, the id of the creator of this ball
+* userId: Uint32, the id of the creator of this ball
 * id: Uint16, it is a value from 1 - 2*32. After user creating a ball, it add to one. 0 is user's airplane
 
 **ball**: `camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint16) + damage(damage) + role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(Float32) + alive(bool) + isKilled(bool) + locationCurrent(location)`
@@ -56,7 +56,7 @@
 
 ![message](http://d.pr/i/5Tw+)
 
-`message length(Uint32) + timestamp(Int64) + message type(Uint8) + message body(this is different struct from different message types)`
+`message length(Uint32) + timestamp(float64) + message type(Uint8) + message body(this is different struct from different message types)`
 
 * message length: Uint32, the length of message, including 'length', 'type' and 'body', the unit of length is 'byte'.
 * timestamp: a Unix time, the number of seconds elapsed since January 1, 1970 UTC.
@@ -69,9 +69,9 @@
 
 type value: 1  (0x01)
 
-message body: `userId(Uint64) + nickname(nickname) + roomNumber(Uint32) + troop(Uint8)`
+message body: `userId(Uint32) + nickname(nickname) + roomNumber(Uint32) + troop(Uint8)`
 
-* userId: Uint64, the id of user.
+* userId: Uint32, the id of user.
 * nickname: nickname, the name of user
 * roomNumber: Uint32, the room of game.
 * troop: Uint8, the troop number of user.
@@ -80,9 +80,9 @@ message body: `userId(Uint64) + nickname(nickname) + roomNumber(Uint32) + troop(
 
 type value: 2  (0x02)
 
-message body: `userId(Uint64) + roomNumber(Uint32) + readyValue(Uint8)`
+message body: `userId(Uint32) + roomNumber(Uint32) + readyValue(Uint8)`
 
-* userId: Uint64, the id of user.
+* userId: Uint32, the id of user.
 * roomNumber: Uint32, the room of game.
 * readyValue: Uint8, 0 (0x00): cancel, 1 (0x01): ready.
 
@@ -90,27 +90,27 @@ message body: `userId(Uint64) + roomNumber(Uint32) + readyValue(Uint8)`
 
 type value: 3  (0x03)
 
-message body: `userId(Uint64) + roomNumber(Uint32)`
+message body: `userId(Uint32) + roomNumber(Uint32)`
 
-* userId: Uint64, the id of uint64.
+* userId: Uint32, the id of uint64.
 * roomNumber: Uint32, the room of game.
 
 ### 8. disconnect(leave early)
 
 type value: 8  (0x08)
 
-message body: `userId(Uint64) + roomNumber(Uint32)`
+message body: `userId(Uint32) + roomNumber(Uint32)`
 
-* userId: Uint64, the id of uint64.
+* userId: Uint32, the id of uint64.
 * roomNumber: Uint32, the room of game.
 
 ### 9. connect(join game)
 
 type value: 9  (0x09)
 
-message body: `userId(Uint64) + nickname(nickname) + roomNumber(Uint32) + troop(Uint8)`
+message body: `userId(Uint32) + nickname(nickname) + roomNumber(Uint32) + troop(Uint8)`
 
-* userId: Uint64, the id of uint64.
+* userId: Uint32, the id of uint64.
 * nickname: nickname, the name of user
 * roomNumber: Uint32, the room of game.
 * troop: Uint8, the troop number of user.
@@ -131,9 +131,9 @@ message body: `collisionSocketInfos(collisionSocketInfos) + displacementInfos(di
 
 type value: 4  (0x04)
 
-message body: `readyUserId(Uint64) + roomNumber(Uint32) + readyValue(Uint8)`
+message body: `readyUserId(Uint32) + roomNumber(Uint32) + readyValue(Uint8)`
 
-* readyUserId: Uint64, the id of the ready one.
+* readyUserId: Uint32, the id of the ready one.
 * roomNumber: Uint32, the room of game.
 * readyValue: Uint8, 0 (0x00): cancel, 1 (0x01): ready.
 

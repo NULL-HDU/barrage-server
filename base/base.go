@@ -5,7 +5,7 @@ import (
 )
 
 // UserID is id of user
-type UserID uint64
+type UserID uint32
 
 // RoomID room.
 type RoomID uint32

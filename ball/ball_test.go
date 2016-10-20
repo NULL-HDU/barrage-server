@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var testBallSize = 42 + 9
+var testBallSize = 34 + 9
 
 func generateBall() Ball {
 

@@ -32,7 +32,7 @@ func (ci *collisionInfo) BInfo() (b.UserID, b.BallID, b.Damage, ball.State) {
 
 // Size ...
 func (ci *collisionInfo) Size() int {
-	return 28
+	return 20
 }
 
 // MarshalBinary ...
@@ -41,9 +41,9 @@ func (ci *collisionInfo) MarshalBinary() ([]byte, error) {
 	bw := bufbo.NewBEBufWriter(&buffer)
 
 	// full ball id
-	bw.PutUint64(uint64(ci.ballIDs[0].uid))
+	bw.PutUint32(uint32(ci.ballIDs[0].uid))
 	bw.PutUint16(uint16(ci.ballIDs[0].id))
-	bw.PutUint64(uint64(ci.ballIDs[1].uid))
+	bw.PutUint32(uint32(ci.ballIDs[1].uid))
 	bw.PutUint16(uint16(ci.ballIDs[1].id))
 
 	// damage
@@ -79,9 +79,9 @@ func (ci *collisionInfo) UnmarshalBinary(data []byte) error {
 	ci.states = make([]ball.State, 2)
 
 	br := bufbo.NewBEBytesReader(data)
-	ci.ballIDs[0].uid = b.UserID(br.Uint64())
+	ci.ballIDs[0].uid = b.UserID(br.Uint32())
 	ci.ballIDs[0].id = b.BallID(br.Uint16())
-	ci.ballIDs[1].uid = b.UserID(br.Uint64())
+	ci.ballIDs[1].uid = b.UserID(br.Uint32())
 	ci.ballIDs[1].id = b.BallID(br.Uint16())
 
 	ci.damages[0] = b.Damage(br.Uint16())

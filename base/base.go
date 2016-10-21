@@ -18,7 +18,7 @@ type BallID uint16
 type ImageID uint8
 
 // Damage is damage of ball.
-type Damage uint16
+type Damage uint8
 
 // Log is the logger of whole sys, it print to stdout and stderr in development env.
 var Log log.Logger

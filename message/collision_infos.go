@@ -8,6 +8,10 @@ import (
 	"fmt"
 )
 
+const (
+	collisionInfoSize = 18
+)
+
 type fullBallID struct {
 	uid b.UserID
 	id  b.BallID
@@ -32,7 +36,7 @@ func (ci *collisionInfo) BInfo() (b.UserID, b.BallID, b.Damage, ball.State) {
 
 // Size ...
 func (ci *collisionInfo) Size() int {
-	return 20
+	return collisionInfoSize
 }
 
 // MarshalBinary ...
@@ -47,8 +51,8 @@ func (ci *collisionInfo) MarshalBinary() ([]byte, error) {
 	bw.PutUint16(uint16(ci.ballIDs[1].id))
 
 	// damage
-	bw.PutUint16(uint16(ci.damages[0]))
-	bw.PutUint16(uint16(ci.damages[1]))
+	bw.PutUint8(uint8(ci.damages[0]))
+	bw.PutUint8(uint8(ci.damages[1]))
 
 	// state
 	isAlive, isKilled, err := ball.AnalyseStateToBytes(ci.states[0])
@@ -84,8 +88,8 @@ func (ci *collisionInfo) UnmarshalBinary(data []byte) error {
 	ci.ballIDs[1].uid = b.UserID(br.Uint32())
 	ci.ballIDs[1].id = b.BallID(br.Uint16())
 
-	ci.damages[0] = b.Damage(br.Uint16())
-	ci.damages[1] = b.Damage(br.Uint16())
+	ci.damages[0] = b.Damage(br.Uint8())
+	ci.damages[1] = b.Damage(br.Uint8())
 
 	isAlive, isKilled := br.Uint8(), br.Uint8()
 	state, err := ball.AnalyseBytesToState(isAlive, isKilled)

@@ -2,6 +2,9 @@ package message
 
 import (
 	"barrage-server/base"
+	"barrage-server/libs/bufbo"
+	"errors"
+	"time"
 )
 
 var logger = base.Log
@@ -31,6 +34,17 @@ const (
 	MsgDisconnect msgType = 0x08
 )
 
+const (
+	// msgHeadSize is the size of message head
+	// now, this includes length, timestamp, type.
+	msgHeadSize = 13
+)
+
+var (
+	// ErrInvalidMessage is the signature of invalid message.
+	ErrInvalidMessage = errors.New("Invalid message error.")
+)
+
 // Message is the interface implemented by an object that can analyze base form of message
 // defined in protocal. And it also change itself to binary in form defined in protocal.
 //
@@ -38,21 +52,25 @@ const (
 // do, discard the message or continue to analyze its body according the message type to create InfoPkg.
 type Message interface {
 	base.CommunicationData
-	Len() int
 	Type() msgType
-	Timestamp() int64
+	Timestamp() time.Time
 	Body() []byte
 }
 
 type msg struct {
 	body      []byte
 	t         msgType
-	timestamp int64
+	timestamp time.Time
 }
 
-// Len ...
-func (m *msg) Len() int {
-	return len(m.body) + 4 + 1 + 8
+// NewMessage create a new Message to wrap bytes of infos.
+func NewMessage(t msgType, body []byte) Message {
+	m := &msg{
+		t:         t,
+		timestamp: time.Now(),
+		body:      body,
+	}
+	return m
 }
 
 // Type ...
@@ -61,13 +79,48 @@ func (m *msg) Type() msgType {
 }
 
 // Timestamp ...
-func (m *msg) Timestamp() int64 {
+func (m *msg) Timestamp() time.Time {
 	return m.timestamp
 }
 
 // Body ...
 func (m *msg) Body() []byte {
 	return m.body
+}
+
+// Size ...
+func (m *msg) Size() int {
+	return len(m.body) + msgHeadSize
+}
+
+// MarshalBinary ...
+func (m *msg) MarshalBinary() ([]byte, error) {
+	bs := make([]byte, m.Size())
+	bw := bufbo.NewBEBytesWriter(bs)
+
+	bw.PutUint32(uint32(m.Size()))
+	bw.PutFloat64(float64(m.timestamp.UnixNano()))
+	bw.PutUint8(uint8(m.t))
+
+	copy(bs[msgHeadSize:], m.body)
+	return bs, nil
+}
+
+// UnmarshalBinary ...
+func (m *msg) UnmarshalBinary(bs []byte) error {
+	br := bufbo.NewBEBytesReader(bs)
+
+	// first times checking message
+	length := int(br.Uint32())
+	if length != len(bs) {
+		return ErrInvalidMessage
+	}
+
+	m.timestamp = time.Unix(0, int64(br.Float64()))
+	m.t = msgType(br.Uint8())
+	m.body = bs[msgHeadSize:]
+
+	return nil
 }
 
 // CreateMessage creates instance of Message from given params, length and timestamp of the

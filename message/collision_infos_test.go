@@ -47,7 +47,7 @@ func generateTestCollisionsInfo(num uint8) *CollisionsInfo {
 
 // generateCollisionInfoBytes ...
 func generateCollisionInfoBytes() []byte {
-	bs := make([]byte, 20)
+	bs := make([]byte, collisionInfoSize)
 	bw := bufbo.NewBEBytesWriter(bs)
 
 	// full ball id
@@ -57,8 +57,8 @@ func generateCollisionInfoBytes() []byte {
 	bw.PutUint16(uint16(idB))
 
 	// damage
-	bw.PutUint16(uint16(damageA))
-	bw.PutUint16(uint16(damageB))
+	bw.PutUint8(uint8(damageA))
+	bw.PutUint8(uint8(damageB))
 
 	// state
 	isAlive, isKilled, _ := ball.AnalyseStateToBytes(stateA)

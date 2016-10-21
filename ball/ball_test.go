@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var testBallSize = 34 + 9
+var testBallSize = ballBaseSize + 9
 
 func generateBall() Ball {
 
@@ -22,7 +22,7 @@ func generateBall() Ball {
 		damage:    10,
 		speed:     10,
 		attackDir: 400,
-		location:  location{99.9, 99.9},
+		location:  location{99, 99},
 	}
 }
 
@@ -72,7 +72,7 @@ func compare(std Ball, b Ball) error {
 
 func TestNewUserAirplane(t *testing.T) {
 	defaultBall := generateBall()
-	newBall, _ := NewUserAirplane(1234, "9999 9999", 1, 99, 99.9, 99.9)
+	newBall, _ := NewUserAirplane(1234, "9999 9999", 1, 99, 99, 99)
 
 	if err := compare(defaultBall, newBall); err != nil {
 		t.Error(err)
@@ -89,7 +89,7 @@ func TestNewUserAirplane(t *testing.T) {
 		t.Errorf("Hope get %v, but get %v", testBallSize, newBallSize)
 	}
 
-	_, err := NewUserAirplane(1234, "9999 9999", 255, 99, 99.9, 99.9)
+	_, err := NewUserAirplane(1234, "9999 9999", 255, 99, 99, 99)
 	if !strings.Contains(err.Error(), errInvalidRole.Error()) {
 		t.Errorf("Hope get '%v', but get '%v'.", errInvalidRole, err)
 	}
@@ -110,5 +110,5 @@ func TestNewBallFromBytes(t *testing.T) {
 			t.Errorf("Hope get panic with error 'index out of range', but get '%v'.", err.(error))
 		}
 	}()
-	NewBallFromBytes(b[39:])
+	NewBallFromBytes(b[31:])
 }

@@ -13,19 +13,19 @@
 
 * bool: Uint8, 0 (0x00): false, 1 (0x01): true. 
 
-**damage**: `damage(Uint16)`
+**damage**: `damage(Uint8)`
 
-**location**: `x(float32) + y(float32)`
+**location**: `x(uint16) + y(uint16)`
 
-* x: float32, x axis.
-* y: float32, y axis.
+* x: uint16, x axis.
+* y: uint16, y axis.
 
 **ballId**: `userId(userId)+id(Uint16)`
 
 * userId: Uint32, the id of the creator of this ball
 * id: Uint16, it is a value from 1 - 2*32. After user creating a ball, it add to one. 0 is user's airplane
 
-**ball**: `camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint16) + damage(damage) + role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(Float32) + alive(bool) + isKilled(bool) + locationCurrent(location)`
+**ball**: `camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint8) + damage(damage) + role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(uint16) + alive(bool) + isKilled(bool) + locationCurrent(location)`
 
 **nickname**: `lengthOfName(Uint8) + name(lengthOfNickname * Uint8)`
 

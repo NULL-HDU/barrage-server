@@ -64,7 +64,7 @@ func (smi *SpecialMsgInfo) Size() int {
 // MarshalBinary marshal SpecialMsgInfo to bytes
 func (smi *SpecialMsgInfo) MarshalBinary() ([]byte, error) {
 	msgBytes := []byte(smi.Message)
-	msgLen := len(msgBytes)
+	msgLen := smi.Size() - 1
 
 	if msgLen > math.MaxUint8 {
 		return nil, fmt.Errorf("SpecialMsgInfo MarshalError: Special message is too long, hope 255, get %d.", msgLen)
@@ -148,7 +148,7 @@ func (di *DisconnectInfo) Size() int {
 
 // MarshalBinary marshal DisconnectInfo to bytes
 func (di *DisconnectInfo) MarshalBinary() ([]byte, error) {
-	bs := make([]byte, 8)
+	bs := make([]byte, di.Size())
 	bw := bufbo.NewBEBytesWriter(bs)
 
 	bw.PutUint32(uint32(di.UID))
@@ -193,16 +193,16 @@ func (ci *ConnectInfo) Size() int {
 
 // MarshalBinary marshal ConnectInfo to bytes
 func (ci *ConnectInfo) MarshalBinary() ([]byte, error) {
-	var buffer bytes.Buffer
-	bfw := bufbo.NewBEBufWriter(&buffer)
+	bs := make([]byte, ci.Size())
+	bw := bufbo.NewBEBytesWriter(bs)
 
-	bfw.PutUint32(uint32(ci.UID))
-	bfw.PutUint8(uint8(len(ci.Nickname)))
-	bfw.PutStr(ci.Nickname)
-	bfw.PutUint32(uint32(ci.RID))
-	bfw.PutUint8(ci.Troop)
+	bw.PutUint32(uint32(ci.UID))
+	bw.PutUint8(uint8(len(ci.Nickname)))
+	bw.PutStr(ci.Nickname)
+	bw.PutUint32(uint32(ci.RID))
+	bw.PutUint8(ci.Troop)
 
-	return buffer.Bytes(), nil
+	return bs, nil
 }
 
 // UnmarshalBinary unmarshal ConnectInfo from bytes

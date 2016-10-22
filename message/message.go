@@ -42,7 +42,7 @@ const (
 
 var (
 	// ErrInvalidMessage is the signature of invalid message.
-	ErrInvalidMessage = errors.New("Invalid message error.")
+	ErrInvalidMessage = errors.New("Invalid message error")
 )
 
 // Message is the interface implemented by an object that can analyze base form of message
@@ -71,6 +71,16 @@ func NewMessage(t msgType, body []byte) Message {
 		body:      body,
 	}
 	return m
+}
+
+// NewMessageFromBytes create a new Message from bytes.
+func NewMessageFromBytes(bs []byte) (Message, error) {
+	m := new(msg)
+	err := m.UnmarshalBinary(bs)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // Type ...

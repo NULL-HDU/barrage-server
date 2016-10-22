@@ -117,7 +117,7 @@ message body: `userId(Uint32) + nickname(nickname) + roomNumber(Uint32) + troop(
 
 ### 13. self info
 
-type value: 10  (0x0c)
+type value: 13  (0x0c)
 
 message body: `collisionSocketInfos(collisionSocketInfos) + displacementInfos(displacementInfos) + newBallsInfos(newBallsInfos)`
 

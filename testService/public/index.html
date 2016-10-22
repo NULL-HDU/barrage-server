@@ -1,91 +1,196 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta charset="utf-8" />
     <title>WebSocket Test</title>
-  </head>
+</head>
 
-  <body style="color: rgb(52,149,207);background: rgb(243,238,238);">
+<body style="color: rgb(52,149,207);background: rgb(243,238,238);">
+    <style type="text/css">
+        body {
+            display: -webkit-box;
+            /* OLD - iOS 6-, Safari 3.1-6 */
+            display: -moz-flex;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: justify;
+            -moz-justify-content: space-around;
+            -webkit-justify-content: space-around;
+            justify-content: space-around;
+            -webkit-box-align: start;
+            -moz-align-items: flex-start;
+            -webkit-align-items: flex-start;
+            align-items: flex-start;
+            -webkit-box-orient: horizontal;
+            -moz-flex-flow: row;
+            -webkit-flex-flow: row;
+            flex-flow: row;
+        }
+    </style>
     <script language="javascript" type="text/javascript">
-     var wsUri = "ws://182.254.146.148:1234/ws";
-     var output;
+     var wsUri = "ws://182.254.146.148:1234/";
+        var output1;
+        var output2;
+        var output3;
 
-     function init() {
-       output = document.getElementById("output");
-       testWebSocket();
-     }
+        function init() {
+            output1 = document.getElementById("ws");
+            output2 = document.getElementById("echo");
+            output3 = document.getElementById("flow");
+            baseTestWebSocket(function(){
+              echoWebSocket(
+                flowWebSocket
+                );
+              });
+        }
 
-     function testWebSocket() {
-       websocket = new WebSocket(wsUri);
-       websocket.binaryType = "arraybuffer";
-       websocket.onopen = function(evt) {
-         onOpen(evt)
-       };
-       websocket.onclose = function(evt) {
-         onClose(evt)
-       };
-       var count = 5
-       websocket.onmessage = function(evt) {
-         onMessage(evt)
-         if(count > 0){
-           setTimeout(function(){
-             var d = new DataView(new ArrayBuffer(4))
-             d.setUint8(0, 2)
-             d.setUint8(1, 3)
-             d.setUint8(2, 3)
-             d.setUint8(3, 3)
-             websocket.send(d.buffer)
-             count--
-           }, 1000)
-         }else{
-           websocket.close()
-         }
-       };
-       websocket.onerror = function(evt) {
-         onError(evt)
-       };
-     }
+        function baseTestWebSocket(next) {
+            websocket = new WebSocket(wsUri + "ws");
+            websocket.binaryType = "arraybuffer";
+            websocket.onopen = function(evt) {
+                onOpen(output1, evt)
+            };
+            websocket.onclose = function(evt) {
+                onClose(output1, evt)
+                next()
+            };
+            var count = 5
+            websocket.onmessage = function(evt) {
+                onMessage(output1, evt)
+                if (count > 0) {
+                    setTimeout(function() {
+                        var d = new DataView(new ArrayBuffer(4))
+                        d.setUint8(0, 2)
+                        d.setUint8(1, 3)
+                        d.setUint8(2, 3)
+                        d.setUint8(3, 3)
+                        websocket.send(d.buffer)
+                        count--
+                    }, 1000)
+                } else {
+                    websocket.close()
+                }
+            };
+            websocket.onerror = function(evt) {
+                onError(output1, evt)
+            };
+        }
 
-     function onOpen(evt) {
-       writeToScreen("CONNECTED");
-     }
+        function flowWebSocket(next) {
+            websocket = new WebSocket(wsUri + "flow");
+            websocket.binaryType = "arraybuffer";
+            websocket.onopen = function(evt) {
+                onOpen(output3, evt)
+            };
+            websocket.onclose = function(evt) {
+                onClose(output3, evt)
+            };
+            websocket.onmessage = function(evt) {
+                onMessage(output3, evt)
+                var d = new DataView(new ArrayBuffer(6))
+                d.setUint8(0, 6)
+                d.setUint8(1, 6)
+                d.setUint8(2, 6)
+                d.setUint8(3, 6)
+                d.setUint8(4, 6)
+                d.setUint8(5, 6)
+                websocket.send(d.buffer)
+            };
+            websocket.onerror = function(evt) {
+                onError(output3, evt)
+            };
+        }
 
-     function onClose(evt) {
-       writeToScreen("DISCONNECTED");
-     }
+        function echoWebSocket(next) {
+            websocket = new WebSocket(wsUri + "echo");
+            websocket.binaryType = "arraybuffer";
+            var count = 8
+            websocket.onopen = function(evt) {
+                onOpen(output2, evt)
 
-     function onMessage(evt) {
-       var dv = new DataView(evt.data)
-       var str = ""
-       console.log(dv.byteLength)
-       for(var i=0;i<dv.byteLength;i++){
-         var char = dv.getUint8(i).toString(16)
-         if(char.length < 2) {
-           char = '0' + char
-         }
-         str += char
-         str += " "
-       }
-       writeToScreen('<span style="color: rgb(133,69,117);">RESPONSE(bytes in hex): ' + str +'</span>');
-     }
+                var d = new DataView(new ArrayBuffer(6))
+                d.setUint8(0, 6)
+                d.setUint8(1, 6)
+                d.setUint8(2, 6)
+                d.setUint8(3, 6)
+                d.setUint8(4, 6)
+                d.setUint8(5, 6)
+                websocket.send(d.buffer)
+                count--
+            };
+            websocket.onclose = function(evt) {
+                onClose(output2, evt)
+              next()
+            };
+            websocket.onmessage = function(evt) {
+                onMessage(output2, evt)
+                if (count > 0) {
+                    setTimeout(function() {
+                        var d = new DataView(new ArrayBuffer(6))
+                        d.setUint8(0, 6)
+                        d.setUint8(1, 6)
+                        d.setUint8(2, 6)
+                        d.setUint8(3, 6)
+                        d.setUint8(4, 6)
+                        d.setUint8(5, 6)
+                        websocket.send(d.buffer)
+                        count--
+                    }, 1000)
+                } else {
+                    websocket.close()
+                }
+            };
+            websocket.onerror = function(evt) {
+                onError(output2, evt)
+            };
+        }
 
-     function onError(evt) {
-       writeToScreen('<span style="color:rgb(209,71,108);">ERROR:</span> ' + evt.data);
-     }
+        function onOpen(output, evt) {
+            writeToScreen(output, "CONNECTED");
+        }
 
-     function writeToScreen(message) {
-       var pre = document.createElement("p");
-       pre.style.wordWrap = "break-word";
-       pre.innerHTML = message;
-       output.appendChild(pre);
-     }
+        function onClose(output, evt) {
+            writeToScreen(output, "DISCONNECTED");
+        }
 
-     window.addEventListener("load", init, false);
+        function onMessage(output, evt) {
+            var dv = new DataView(evt.data)
+            var str = ""
+            for (var i = 0; i < dv.byteLength; i++) {
+                var char = dv.getUint8(i).toString(16)
+                if (char.length < 2) {
+                    char = '0' + char
+                }
+                str += char
+                str += " "
+            }
+            writeToScreen(output, '<span style="color: rgb(133,69,117);">RESPONSE(bytes in hex): ' + str + '</span>');
+        }
+
+        function onError(output, evt) {
+            writeToScreen(output, '<span style="color:rgb(209,71,108);">ERROR:</span> ' + evt.data);
+        }
+
+        function writeToScreen(output, message) {
+            var pre = document.createElement("p");
+            pre.style.wordWrap = "break-word";
+            pre.innerHTML = message;
+            output.appendChild(pre);
+        }
+
+        window.addEventListener("load", init, false);
     </script>
 
-    <div id="output" style="margin: 300px auto;text-align: center;">
-      <h2>WebSocket Test</h2>
+    <div id="ws" style="margin: 300px auto;width: 33%;text-align: center;">
+        <h2>WebSocket Test For Base Test Service</h2>
     </div>
-  </body>
+    <div id="echo" style="margin: 300px auto;width: 33%;text-align: center;">
+        <h2>WebSocket Test For Echo Service</h2>
+    </div>
+    <div id="flow" style="margin: 300px auto;width: 33%;text-align: center;">
+        <h2>WebSocket Test For Flow Service</h2>
+    </div>
+</body>
 
 </html>

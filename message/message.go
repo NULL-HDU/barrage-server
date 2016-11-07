@@ -63,7 +63,10 @@ type msg struct {
 	timestamp time.Time
 }
 
-// NewMessage create a new Message to wrap bytes of infos.
+// NewMessage creates instance of Message from given params.
+// length and timestamp of the message will calculate automatically!
+//
+// This should be used to send message data to frontend
 func NewMessage(t msgType, body []byte) Message {
 	m := &msg{
 		t:         t,
@@ -74,6 +77,8 @@ func NewMessage(t msgType, body []byte) Message {
 }
 
 // NewMessageFromBytes create a new Message from bytes.
+//
+// This should be used to receive message data from frontend.
 func NewMessageFromBytes(bs []byte) (Message, error) {
 	m := new(msg)
 	err := m.UnmarshalBinary(bs)
@@ -132,18 +137,3 @@ func (m *msg) UnmarshalBinary(bs []byte) error {
 
 	return nil
 }
-
-// CreateMessage creates instance of Message from given params, length and timestamp of the
-// message will calculate automatically!
-//
-// This should be used to send message data to frontend
-// func CreateMessage(t msgType, body []byte) Message {
-
-// }
-
-// NewMessage creates instance of Message from the binary.
-//
-// This should be used to receive message data from frontend.
-// func NewMessage(message []byte) Message {
-
-// }

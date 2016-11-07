@@ -20,3 +20,8 @@ type CommunicationData interface {
 	// Size provide the number of bytes after CommunicationData marshaled.
 	Size() int
 }
+
+// // PoolItem is the interface implemented by an object that can clear itself.
+// type PoolItem interface {
+// 	Clear()
+// }

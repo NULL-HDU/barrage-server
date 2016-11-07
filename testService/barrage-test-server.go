@@ -105,7 +105,7 @@ FLOWOVER:
 
 		// timestamp check
 		ts, nowTs := msg.Timestamp().UnixNano(), time.Now().UnixNano()
-		if math.Abs(float64(ts-nowTs)) > float64(600*time.Microsecond) {
+		if math.Abs(float64(ts-nowTs)) > float64(600*time.Millisecond) {
 			errString := "Timestamp error: the bias of Timestamp is bigger than 600ms."
 			logger.Infof("Clinet message error: %v. \n", errString)
 			sendSpecialMessage(ws, errString)

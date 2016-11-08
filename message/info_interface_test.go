@@ -3,6 +3,8 @@ package message
 import (
 	b "barrage-server/base"
 	"bytes"
+	"encoding/binary"
+	"errors"
 	"testing"
 )
 
@@ -18,6 +20,10 @@ func (ti *testInfo) Size() int {
 
 // return the []byte that value of each item is v1 and length is v2
 func (ti *testInfo) MarshalBinary() ([]byte, error) {
+	if ti.v2 == -1 {
+		return nil, errors.New("error for testing.")
+	}
+
 	bs := make([]byte, ti.v2)
 
 	bs[0] = ti.v1
@@ -88,6 +94,20 @@ func generateTestBytes() []byte {
 	buffer.Write(bytes.Repeat([]byte{'d'}, 9))
 
 	return buffer.Bytes()
+}
+
+// generateTestStruct ...
+func generateTestErrorStruct() *testInfoList {
+	til := &testInfoList{}
+
+	til.length = 4
+	til.infolist = make([]testInfo, 4)
+	til.infolist[0] = testInfo{v1: 'a', v2: -1}
+	til.infolist[1] = testInfo{v1: 'b', v2: -1}
+	til.infolist[2] = testInfo{v1: 'c', v2: -1}
+	til.infolist[3] = testInfo{v1: 'd', v2: -1}
+
+	return til
 }
 
 // generateTestStruct ...
@@ -162,4 +182,20 @@ func TestMarshalListBinary(t *testing.T) {
 	if bs2 := generateTestBytes(); bytes.Compare(bs2, bs) != 0 {
 		t.Errorf("MarshalListBinary result is not correct, hope %v, get %v.", bs2, bs)
 	}
+}
+
+// TestMarshalListBinary ...
+func TestMarshalListBinaryError(t *testing.T) {
+	errStr := generateTestErrorStruct()
+	bs, err := MarshalListBinary(errStr)
+	if err != nil {
+		t.Error(err)
+	}
+	if bsLen := len(bs); bsLen != 4 {
+		t.Errorf("MarshalListBinary result is not correct, hope 4, get %v", bsLen)
+	}
+	if v := int(binary.BigEndian.Uint32(bs)); v != 0 {
+		t.Errorf("Head value of MarshalListBinary result is not correct, hope 0, get %v", v)
+	}
+
 }

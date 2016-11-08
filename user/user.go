@@ -11,6 +11,7 @@ type User interface {
 	Room() b.RoomID
 
 	//Send is used by room to send bytes to frontend.
+	//Send send bytes in a new goroutine.
 	Send(bs []byte)
 	//UploadInfo send infopkg to room via chan<- m.InfoPkg
 	UploadInfo(infopkg m.InfoPkg)

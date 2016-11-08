@@ -10,23 +10,14 @@ import (
 var logger = b.Log
 
 const (
-	collisionIndex = iota
-	displaceIndex
-	newballIndex
-
-	// cache data for send to self client.
-	bufferIndex
-)
-
-const (
 	// hallID id of hall
 	hallID = 0
 )
 
 const (
 	// room status
-	roomOpen = uint8(iota)
-	roomClose
+	roomClose = uint8(iota)
+	roomOpen
 )
 
 var commonHall *Hall
@@ -96,7 +87,7 @@ func Open(r Tiggler, loopDuration time.Duration) {
 			}
 		}
 
-		logger.Infof("InfoPkg handler of Room %d closed.", r.ID())
+		logger.Infof("InfoPkg handler of Room %d closed. \n", r.ID())
 	}()
 
 }

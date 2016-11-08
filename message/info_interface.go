@@ -66,6 +66,7 @@ func MarshalListBinary(infolist InfoList) ([]byte, error) {
 	buffer.Write([]byte{0, 0, 0, 0})
 
 	length := infolist.Length()
+	count := length
 
 	var bs []byte
 	var err error
@@ -73,7 +74,7 @@ func MarshalListBinary(infolist InfoList) ([]byte, error) {
 		bs, err = infolist.Item(i).MarshalBinary()
 		if err != nil {
 			logger.Errorln(err)
-			length--
+			count--
 			continue
 		}
 		buffer.Write(bs)
@@ -82,7 +83,7 @@ func MarshalListBinary(infolist InfoList) ([]byte, error) {
 	// finally, write the length of list into begin of result bytes.
 	result := buffer.Bytes()
 	bw := bufbo.NewBEBytesWriter(result)
-	bw.PutUint32(uint32(length))
+	bw.PutUint32(uint32(count))
 
 	return result, nil
 }

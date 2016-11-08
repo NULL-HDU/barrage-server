@@ -219,6 +219,8 @@ func (ci *ConnectInfo) UnmarshalBinary(bs []byte) error {
 
 // PlaygroundInfo exchange informations among User, Room and Playground.
 type PlaygroundInfo struct {
+	Sender b.UserID
+
 	Collisions    *CollisionsInfo
 	Displacements *BallsInfo
 	NewBalls      *BallsInfo

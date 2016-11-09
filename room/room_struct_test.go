@@ -1,6 +1,7 @@
 package room
 
 import (
+	"barrage-server/ball"
 	b "barrage-server/base"
 	m "barrage-server/message"
 	"testing"
@@ -101,7 +102,12 @@ type testUser struct {
 	rid b.RoomID
 
 	infopkgChan chan<- m.InfoPkg
-	checkFunc   func(bs []byte)
+	checkFunc   func(bs []byte, itype m.InfoType)
+}
+
+// Name ...
+func (tu *testUser) Name() string {
+	return "tester"
 }
 
 // ID ...
@@ -115,9 +121,9 @@ func (tu *testUser) Room() b.RoomID {
 }
 
 // Send ...
-func (tu *testUser) Send(bs []byte) {
+func (tu *testUser) Send(bs []byte, itype m.InfoType) {
 	if tu.checkFunc != nil {
-		tu.checkFunc(bs)
+		tu.checkFunc(bs, itype)
 	} else {
 		logger.Infoln("checkFunc is nil")
 	}
@@ -137,6 +143,19 @@ func (tu *testUser) BindRoom(id b.RoomID, c chan<- m.InfoPkg) {
 // TestRoomUserJoinAndLeft ...
 func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 	r := NewRoom(20)
+	checkFunc := func(bs []byte, itype m.InfoType) {
+		if itype != m.InfoAirplaneCreated {
+			return
+		}
+		airplane, err := ball.NewBallFromBytes(bs)
+		if err != nil {
+			t.Error(err)
+		}
+		if airplaneID := airplane.UID(); airplaneID != 1 {
+			t.Errorf("User id of airplane should be %d, but get %d.", 1, airplaneID)
+		}
+	}
+
 	if id := r.ID(); id != 20 {
 		t.Errorf("Room id is wrong, hope %d, get %d.", 20, id)
 	}
@@ -145,14 +164,23 @@ func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 		t.Errorf("Status of room should be %d, but get %d.", roomClose, status)
 	}
 
-	tu1 := &testUser{id: 1}
+	tu1 := &testUser{id: 1, checkFunc: checkFunc}
+	if err := r.UserJoin(tu1); err != nil {
+		t.Error(err)
+	}
+
+	airplane, err := ball.NewBallFromBytes(r.cache[tu1.ID()][newballIndex].Buf)
+	if err != nil {
+		t.Error(err)
+	}
+	if airplaneID := airplane.UID(); airplaneID != 1 {
+		t.Errorf("User id of airplane should be %d, but get %d.", 1, airplaneID)
+	}
+
 	tu2 := &testUser{id: 2}
 	tu3 := &testUser{id: 3}
 	tu4 := &testUser{id: 4}
 
-	if err := r.UserJoin(tu1); err != nil {
-		t.Error(err)
-	}
 	if err := r.UserJoin(tu2); err != nil {
 		t.Error(err)
 	}
@@ -211,12 +239,15 @@ func TestRoomDisconnect(t *testing.T) {
 	Close(r)
 }
 
-// TestRoomHandlePlaygroundInfo ...
+//TestRoomHandlePlaygroundInfo ...
 func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 	pi1 := m.GenerateTestPlaygroundInfo(1, 10, 20, 30)
 	pi2 := m.GenerateTestPlaygroundInfo(2, 10, 20, 30)
 	pi3 := m.GenerateTestPlaygroundInfo(3, 10, 20, 30)
-	checkFunc := func(bs []byte) {
+	checkFunc := func(bs []byte, itype m.InfoType) {
+		if itype != m.InfoPlayground {
+			return
+		}
 		// Test playgroundBoardCast
 		piBak := new(m.PlaygroundInfo)
 		if err := piBak.UnmarshalBinary(bs); err != nil {
@@ -229,8 +260,8 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 		if diLen := piBak.Displacements.Length(); diLen != 40 {
 			t.Errorf("Number of Displacements is wrong, hope %d, get %d.", 40, diLen)
 		}
-		if nbLen := piBak.NewBalls.Length(); nbLen != 60 {
-			t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", 60, nbLen)
+		if nbLen := piBak.NewBalls.Length(); nbLen != 62 {
+			t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", 62, nbLen)
 		}
 	}
 
@@ -244,6 +275,7 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 	if err := r.UserJoin(tu1); err != nil {
 		t.Error(err)
 	}
+	airplaneByteSize := len(r.cache[tu1.ID()][newballIndex].Buf)
 	if err := r.UserJoin(tu2); err != nil {
 		t.Error(err)
 	}
@@ -261,7 +293,7 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 	if diSize, pDiSize := len(r.cache[1][displaceIndex].Buf), pi1.Displacements.Size()-4; diSize != pDiSize {
 		t.Errorf("Number of Displacements is wrong, hope %d, get %d.", pDiSize, diSize)
 	}
-	if nbSize, pNbSize := len(r.cache[1][newballIndex].Buf), pi1.NewBalls.Size()-4; nbSize != pNbSize {
+	if nbSize, pNbSize := len(r.cache[1][newballIndex].Buf), pi1.NewBalls.Size()-4+airplaneByteSize; nbSize != pNbSize {
 		t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", pNbSize, nbSize)
 	}
 

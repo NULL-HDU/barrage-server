@@ -1,7 +1,10 @@
 package room
 
 import (
+	b "barrage-server/base"
+	m "barrage-server/message"
 	"testing"
+	"time"
 )
 
 // TestHallUserJoinAndLeft ...
@@ -49,5 +52,88 @@ func TestHallUserJoinAndLeftAndID(t *testing.T) {
 	if usersLen := len(users); usersLen != 2 {
 		t.Errorf("Length of users is wrong, hope %d, get %d.", 2, usersLen)
 	}
+
+}
+
+// TestHallHandleInfoPkg ...
+func TestHallHandleInfoPkg(t *testing.T) {
+	r := NewHall()
+	count := 0
+	checkFunc := func(bs []byte, itype m.InfoType) {
+		if itype != m.InfoSpecialMessage {
+			count = -1
+			return
+		}
+		count++
+	}
+
+	tu1 := &testUser{
+		id:        1,
+		checkFunc: checkFunc,
+	}
+
+	if err := r.UserJoin(tu1); err != nil {
+		t.Error(err)
+	}
+
+	ci := new(m.ConnectInfo)
+	ci.UID = 1
+	ci.RID = 20
+
+	Open(r, time.Second)
+
+	// not exist
+	tu1.UploadInfo(ci)
+	time.Sleep(10 * time.Millisecond)
+	if count != 1 {
+		t.Errorf("tu1 should join failed and recieve a special message, but get count %d.", count)
+	}
+	count = 0
+
+	r.rooms[20] = NewRoom(20)
+	tu1.UploadInfo(ci)
+	time.Sleep(100 * time.Millisecond)
+	if count != -1 {
+		t.Errorf("tu1 should join success and set count to -1, but get count %d.", count)
+	}
+	count = 0
+
+	// full
+	for i := 0; i < rmLimit+1; i++ {
+		tu := &testUser{
+			id:        b.UserID(i + 2),
+			checkFunc: checkFunc,
+		}
+		if err := r.UserJoin(tu); err != nil {
+			t.Error(err)
+		}
+		ci := new(m.ConnectInfo)
+		ci.UID = b.UserID(i + 2)
+		ci.RID = 20
+		tu.UploadInfo(ci)
+	}
+	time.Sleep(10 * time.Millisecond)
+	if count != 1 {
+		t.Errorf("tu should join failed and set count to 1, but get count %d.", count)
+	}
+	count = 0
+
+	// rejoin
+	ci = new(m.ConnectInfo)
+	ci.UID = 1
+	ci.RID = 20
+	tu := &testUser{
+		id:        23,
+		checkFunc: checkFunc,
+	}
+	if err := r.UserJoin(tu); err != nil {
+		t.Error(err)
+	}
+	tu.UploadInfo(ci)
+	time.Sleep(10 * time.Millisecond)
+	if count != 1 {
+		t.Errorf("tu1 should join failed and set count to 1, but get count %d.", count)
+	}
+	count = 0
 
 }

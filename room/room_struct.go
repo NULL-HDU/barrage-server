@@ -3,11 +3,14 @@ package room
 import (
 	b "barrage-server/base"
 	m "barrage-server/message"
+	pg "barrage-server/playground"
 	"barrage-server/user"
 	"encoding/binary"
 	"fmt"
 	"sync"
 )
+
+var rmLimit = b.RoomMembersLimit
 
 const (
 	collisionIndex = iota
@@ -106,17 +109,48 @@ func (r *Room) Users() (users []b.UserID) {
 }
 
 // UserJoin ...
+// now this function will create an Airplane.
 func (r *Room) UserJoin(u user.User) error {
 	r.mapM.Lock()
 	defer r.mapM.Unlock()
 
-	_, ok := r.users[u.ID()]
-	if !ok {
-		r.users[u.ID()] = u
-		// TODO: cache map also should be cache. (cache map list pool for every room.)
-		r.cache[u.ID()] = generateCacheMap()
-		u.BindRoom(r.id, r.infoChan)
+	if len(r.users) >= rmLimit {
+		return errRoomIsFull
 	}
+
+	_, ok := r.users[u.ID()]
+	if ok {
+		return errUserAlreadyJoin
+	}
+
+	uid := u.ID()
+	r.users[uid] = u
+	// TODO: cache map also should be cache. (cache map list pool for every room.)
+	newCacheMap := generateCacheMap()
+	r.cache[uid] = newCacheMap
+	u.BindRoom(r.id, r.infoChan)
+
+	airplane, err := pg.CreateAirplaneInPlayGround(uid, u.Name(), 1, 0)
+	if err != nil {
+		return err
+	}
+
+	// cache airplane message
+	bs, err := airplane.MarshalBinary()
+	if err != nil {
+		return err
+	}
+	newCacheMap[newballIndex].Num = 1
+	newCacheMap[newballIndex].Buf = bs
+
+	// send airplaneCreatedInfo
+	aci := new(m.AirplaneCreatedInfo)
+	aci.Airplane = airplane
+	bs, err = aci.MarshalBinary()
+	if err != nil {
+		return err
+	}
+	u.Send(bs, m.InfoAirplaneCreated)
 
 	return nil
 }
@@ -223,7 +257,7 @@ func (r *Room) playgroundBoardCast() {
 
 		if bs := cache[bufferIndex].Buf; len(bs) > 0 {
 			// send bytes in a new goroutine
-			user.Send(bs)
+			user.Send(bs, m.InfoPlayground)
 		}
 	}
 

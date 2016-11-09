@@ -101,9 +101,11 @@ type ball struct {
 //
 // hp, damage, speed and attackDir is generate automatically according to roleConf
 // of roleConfTable[r].
-func NewUserAirplane(c b.UserID, nickname string, r role, s special, x uint16, y uint16) (Ball, error) {
+func NewUserAirplane(c b.UserID, nickname string, aRole uint8, aSpecial uint16, x uint16, y uint16) (Ball, error) {
 	// TODO: we need a role table. Analyze from json file,
 	//       but now we just write hard.
+	r := role(aRole)
+	s := special(aSpecial)
 	airPlaneRole, ok := roleConfTable[r]
 	if !ok {
 		return nil, fmt.Errorf(

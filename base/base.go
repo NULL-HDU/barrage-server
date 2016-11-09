@@ -2,6 +2,7 @@ package base
 
 import (
 	"barrage-server/libs/log"
+	"errors"
 )
 
 // UserID is id of user
@@ -22,6 +23,13 @@ type Damage uint8
 
 // Log is the logger of whole sys, it print to stdout and stderr in development env.
 var Log log.Logger
+
+var (
+	// errors
+
+	// ErrServerError defines all server error.
+	ErrServerError = errors.New("server error.")
+)
 
 // init
 func init() {

@@ -12,13 +12,14 @@ var (
 	ErrEmptyInfo = errors.New("This info is empty.")
 )
 
-type infoType msgType
+// InfoType type of info
+type InfoType msgType
 
 const (
 	// Room -> User -----------------------------------------------------------
 
 	// InfoGameOver is used when server will break off.
-	InfoGameOver = infoType(iota)
+	InfoGameOver = InfoType(iota)
 	// InfoSpecialMessage is used to send informations not related to game engine.
 	InfoSpecialMessage
 	// InfoAirplaneCreated is used to send airplane of userself to frontend while user connecting
@@ -45,7 +46,7 @@ type Info interface {
 
 // InfoPkg is used to transfer data among major module(user, room and playground).
 type InfoPkg interface {
-	Type() infoType
+	Type() InfoType
 	Body() Info
 }
 

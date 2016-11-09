@@ -4,6 +4,7 @@ import (
 	b "barrage-server/base"
 	m "barrage-server/message"
 	"barrage-server/user"
+	"fmt"
 	"sync"
 )
 
@@ -15,7 +16,7 @@ type Hall struct {
 	uM      sync.RWMutex
 	statusM sync.RWMutex
 
-	rooms map[b.RoomID]Room
+	rooms map[b.RoomID]*Room
 	users map[b.UserID]user.User
 
 	infoChan chan m.InfoPkg
@@ -25,7 +26,7 @@ type Hall struct {
 // NewHall create and init hall.
 func NewHall() (h *Hall) {
 	h = new(Hall)
-	h.rooms = make(map[b.RoomID]Room)
+	h.rooms = make(map[b.RoomID]*Room)
 	h.users = make(map[b.UserID]user.User)
 	h.infoChan = make(chan m.InfoPkg, 10)
 
@@ -75,17 +76,52 @@ func (h *Hall) Status() uint8 {
 	return h.status
 }
 
+// handleConnect ...
+func (h *Hall) handleConnect(ci *m.ConnectInfo) {
+	// filter wrong UID in recieve message
+	r, ok := h.rooms[ci.RID]
+	if !ok {
+		si := &m.SpecialMsgInfo{Message: fmt.Sprintf("Room %d is not exist!", ci.RID)}
+		bs, _ := si.MarshalBinary()
+		h.users[ci.UID].Send(bs, m.InfoSpecialMessage)
+		return
+	}
+
+	err := r.UserJoin(h.users[ci.UID])
+	if err != nil {
+		si := new(m.SpecialMsgInfo)
+		switch err {
+		case errRoomIsFull:
+			si.Message = fmt.Sprintf("Room %d is full!", ci.RID)
+		case errUserAlreadyJoin:
+			si.Message = fmt.Sprintf("You have joined Room %d!", ci.RID)
+		default:
+			logger.Errorln(err)
+			si.Message = b.ErrServerError.Error()
+		}
+		bs, _ := si.MarshalBinary()
+		h.users[ci.UID].Send(bs, m.InfoSpecialMessage)
+	}
+}
+
 // HandleInfoPkg ...
 func (h *Hall) HandleInfoPkg(ipkg m.InfoPkg) {
+	var err string
+
 	switch t := ipkg.Type(); t {
 	case m.InfoConnect:
-		ci := ipkg.Body().(*m.ConnectInfo)
-		logger.Infoln(ci.RID, ci.UID)
-	case m.InfoDisconnect:
-		di := ipkg.Body().(*m.DisconnectInfo)
-		logger.Infoln(di.RID, di.UID)
+		ci, ok := ipkg.Body().(*m.ConnectInfo)
+		if !ok {
+			err = "InfoPkg fails to be convert into ConnectInfo."
+			break
+		}
+		h.handleConnect(ci)
 	default:
 		logger.Errorf("Invalid information package! type: %d.", t)
+	}
+
+	if err != "" {
+		logger.Errorln(err)
 	}
 }
 

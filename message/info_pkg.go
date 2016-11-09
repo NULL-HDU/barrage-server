@@ -15,7 +15,7 @@ type GameOverInfo struct {
 }
 
 // Type return type of information
-func (goi *GameOverInfo) Type() infoType {
+func (goi *GameOverInfo) Type() InfoType {
 	return InfoGameOver
 }
 
@@ -47,7 +47,7 @@ type SpecialMsgInfo struct {
 }
 
 // Type return type of information
-func (smi *SpecialMsgInfo) Type() infoType {
+func (smi *SpecialMsgInfo) Type() InfoType {
 	return InfoSpecialMessage
 }
 
@@ -92,7 +92,7 @@ type AirplaneCreatedInfo struct {
 }
 
 // Type return type of information
-func (aci *AirplaneCreatedInfo) Type() infoType {
+func (aci *AirplaneCreatedInfo) Type() InfoType {
 	return InfoAirplaneCreated
 }
 
@@ -125,14 +125,14 @@ func (aci *AirplaneCreatedInfo) UnmarshalBinary(bs []byte) error {
 // game early, holding data about user id and the id of that user's room.
 type DisconnectInfo struct {
 	// type of info
-	// t infoType
+	// t InfoType
 
 	UID b.UserID
 	RID b.RoomID
 }
 
 // Type return type of information
-func (di *DisconnectInfo) Type() infoType {
+func (di *DisconnectInfo) Type() InfoType {
 	return InfoDisconnect
 }
 
@@ -177,7 +177,7 @@ type ConnectInfo struct {
 }
 
 // Type return type of information
-func (ci *ConnectInfo) Type() infoType {
+func (ci *ConnectInfo) Type() InfoType {
 	return InfoConnect
 }
 
@@ -227,7 +227,7 @@ type PlaygroundInfo struct {
 }
 
 // Type return type of information
-func (pi *PlaygroundInfo) Type() infoType {
+func (pi *PlaygroundInfo) Type() InfoType {
 	return InfoPlayground
 }
 

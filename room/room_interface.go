@@ -4,6 +4,7 @@ import (
 	b "barrage-server/base"
 	m "barrage-server/message"
 	"barrage-server/user"
+	"errors"
 	"time"
 )
 
@@ -20,10 +21,18 @@ const (
 	roomOpen
 )
 
+var (
+	// errors
+
+	errRoomIsFull      = errors.New("Room is full.")
+	errUserAlreadyJoin = errors.New("User already join.")
+)
+
 var commonHall *Hall
 
 func init() {
 	commonHall = NewHall()
+	commonHall.rooms[1] = NewRoom(1)
 	Open(commonHall, time.Minute)
 }
 

@@ -183,7 +183,7 @@ func (r *Room) handleDisconnect(dsi *m.DisconnectInfo) {
 
 // constructApartBytesFor append bytes of partIndex in r.cache of other user.
 func (r *Room) constructApartBytesFor(uid b.UserID, partIndex int) {
-	bufferCache := r.cache[uid][bufferIndex]
+	bufferCache := &r.cache[uid][bufferIndex]
 	lenOffset := len(bufferCache.Buf)
 	listItemCount := uint32(0)
 
@@ -220,8 +220,11 @@ func (r *Room) playgroundBoardCast() {
 			continue
 		}
 		r.constructBytesFor(uid)
-		// send bytes in a new goroutine
-		user.Send(cache[bufferIndex].Buf)
+
+		if bs := cache[bufferIndex].Buf; len(bs) > 0 {
+			// send bytes in a new goroutine
+			user.Send(bs)
+		}
 	}
 
 	// clear cache

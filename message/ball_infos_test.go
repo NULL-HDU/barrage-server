@@ -1,27 +1,8 @@
 package message
 
 import (
-	"barrage-server/ball"
 	"testing"
 )
-
-func generateBall() ball.Ball {
-	b, _ := ball.NewUserAirplane(0, "airplane", 1, 0, 99, 99)
-	return b
-}
-
-// generateTestBallsInfo ...
-func generateTestBallsInfo(num int) *BallsInfo {
-	bsi := &BallsInfo{}
-
-	bsi.length = uint32(num)
-	bsi.ballInfos = make([]ball.Ball, num)
-	for i := 0; i < num; i++ {
-		bsi.ballInfos[i] = generateBall()
-	}
-
-	return bsi
-}
 
 func TestBallsInfoMarshalListBinary(t *testing.T) {
 	bsi := generateTestBallsInfo(4)

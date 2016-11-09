@@ -8,43 +8,6 @@ import (
 	"testing"
 )
 
-const (
-	uidA = 10
-	uidB = 100
-	idA  = 1
-	idB  = 1
-
-	damageA = 120
-	damageB = 130
-
-	stateA = ball.Alive
-	stateB = ball.Dead
-)
-
-// generateTestCollisionsInfo ...
-func generateTestCollisionsInfo(num uint8) *CollisionsInfo {
-	csi := &CollisionsInfo{}
-	csi.NewItems(uint32(num))
-	fullBallIDA := fullBallID{
-		uid: b.UserID(uidA),
-		id:  b.BallID(idA),
-	}
-	fullBallIDB := fullBallID{
-		uid: b.UserID(uidB),
-		id:  b.BallID(idB),
-	}
-
-	for i := uint32(0); i < csi.length; i++ {
-		csi.CollisionInfos[i] = collisionInfo{
-			ballIDs: []fullBallID{fullBallIDA, fullBallIDB},
-			damages: []b.Damage{b.Damage(damageA), b.Damage(damageB)},
-			states:  []ball.State{stateA, stateB},
-		}
-	}
-
-	return csi
-}
-
 // generateCollisionInfoBytes ...
 func generateCollisionInfoBytes() []byte {
 	bs := make([]byte, collisionInfoSize)
@@ -86,7 +49,7 @@ func generateCollisionsInfoBytes(num uint8) []byte {
 // TestCollisionInfosMarsharlListBinary ...
 func TestCollisionInfoMarsharlListBinary(t *testing.T) {
 	length := uint8(9)
-	csi := generateTestCollisionsInfo(length)
+	csi := generateTestCollisionsInfo(int(length))
 
 	bs, err := MarshalListBinary(csi)
 	if err != nil {

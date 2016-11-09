@@ -4,6 +4,7 @@ import (
 	b "barrage-server/base"
 	m "barrage-server/message"
 	"testing"
+	"time"
 )
 
 type testInfo struct {
@@ -115,7 +116,11 @@ func (tu *testUser) Room() b.RoomID {
 
 // Send ...
 func (tu *testUser) Send(bs []byte) {
-	tu.checkFunc(bs)
+	if tu.checkFunc != nil {
+		tu.checkFunc(bs)
+	} else {
+		logger.Infoln("checkFunc is nil")
+	}
 }
 
 // UploadInfo ...
@@ -170,11 +175,102 @@ func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 		t.Error(err)
 	}
 
+	if lenUser := len(commonHall.users); lenUser != 2 {
+		t.Errorf("Number of users in commonHall should be %d, but get %d.", 2, lenUser)
+	}
+
 	users = r.Users()
 	if usersLen := len(users); usersLen != 2 {
 		t.Errorf("Length of users is wrong, hope %d, get %d.", 2, usersLen)
 	}
 
+}
+
+// TestRoomDisconnect ...
+func TestRoomDisconnect(t *testing.T) {
+	r := NewRoom(20)
+	Open(r, time.Second)
+
+	tu1 := &testUser{id: 1}
+	if err := r.UserJoin(tu1); err != nil {
+		t.Error(err)
+	}
+
+	if user := r.users[1]; user.ID() != tu1.id {
+		t.Errorf("UserJoin error: user should has joined.")
+	}
+
+	di := &m.DisconnectInfo{UID: 1, RID: 20}
+	tu1.UploadInfo(di)
+
+	time.Sleep(time.Millisecond)
+	if userLen := len(r.users); userLen != 0 {
+		t.Errorf("Number of user should zero, but get %d.", userLen)
+	}
+
+	Close(r)
+}
+
+// TestRoomHandlePlaygroundInfo ...
+func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
+	pi1 := m.GenerateTestPlaygroundInfo(1, 10, 20, 30)
+	pi2 := m.GenerateTestPlaygroundInfo(2, 10, 20, 30)
+	pi3 := m.GenerateTestPlaygroundInfo(3, 10, 20, 30)
+	checkFunc := func(bs []byte) {
+		// Test playgroundBoardCast
+		piBak := new(m.PlaygroundInfo)
+		if err := piBak.UnmarshalBinary(bs); err != nil {
+			t.Error(err)
+		}
+
+		if ciLen := piBak.Collisions.Length(); ciLen != 20 {
+			t.Errorf("Number of CollisionsInfo is wrong, hope %d, get %d.", 20, ciLen)
+		}
+		if diLen := piBak.Displacements.Length(); diLen != 40 {
+			t.Errorf("Number of Displacements is wrong, hope %d, get %d.", 40, diLen)
+		}
+		if nbLen := piBak.NewBalls.Length(); nbLen != 60 {
+			t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", 60, nbLen)
+		}
+	}
+
+	tu1 := &testUser{id: 1, checkFunc: checkFunc}
+	tu2 := &testUser{id: 2, checkFunc: checkFunc}
+	tu3 := &testUser{id: 3, checkFunc: checkFunc}
+
+	r := NewRoom(20)
+	Open(r, time.Second)
+
+	if err := r.UserJoin(tu1); err != nil {
+		t.Error(err)
+	}
+	if err := r.UserJoin(tu2); err != nil {
+		t.Error(err)
+	}
+	if err := r.UserJoin(tu3); err != nil {
+		t.Error(err)
+	}
+
+	tu1.UploadInfo(pi1)
+	time.Sleep(time.Millisecond * 100)
+
+	// Test handlePlayground
+	if ciSize, pCiSize := len(r.cache[1][collisionIndex].Buf), pi1.Collisions.Size()-4; ciSize != pCiSize {
+		t.Errorf("Number of CollisionsInfo is wrong, hope %d, get %d.", pCiSize, ciSize)
+	}
+	if diSize, pDiSize := len(r.cache[1][displaceIndex].Buf), pi1.Displacements.Size()-4; diSize != pDiSize {
+		t.Errorf("Number of Displacements is wrong, hope %d, get %d.", pDiSize, diSize)
+	}
+	if nbSize, pNbSize := len(r.cache[1][newballIndex].Buf), pi1.NewBalls.Size()-4; nbSize != pNbSize {
+		t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", pNbSize, nbSize)
+	}
+
+	tu2.UploadInfo(pi2)
+	tu3.UploadInfo(pi3)
+
+	time.Sleep(time.Second)
+
+	Close(r)
 }
 
 // TestMergeInfoListBytes ...

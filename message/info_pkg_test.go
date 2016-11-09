@@ -157,11 +157,7 @@ func TestConnectInfo(t *testing.T) {
 // TestPlaygroundInfo ...
 func TestPlaygroundInfo(t *testing.T) {
 	// MarshalBinary
-	pi := &PlaygroundInfo{
-		Collisions:    generateTestCollisionsInfo(9),
-		Displacements: generateTestBallsInfo(30),
-		NewBalls:      generateTestBallsInfo(20),
-	}
+	pi := GenerateTestPlaygroundInfo(0, 9, 30, 20)
 	bs, err := pi.MarshalBinary()
 	if err != nil {
 		t.Error(err)

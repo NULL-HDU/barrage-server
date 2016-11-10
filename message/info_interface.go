@@ -5,6 +5,7 @@ import (
 	"barrage-server/libs/bufbo"
 	"bytes"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -13,7 +14,7 @@ var (
 )
 
 // InfoType type of info
-type InfoType msgType
+type InfoType MsgType
 
 const (
 	// Room -> User -----------------------------------------------------------
@@ -58,6 +59,26 @@ type InfoList interface {
 
 	NewItems(length uint32)
 	Crop(length uint32)
+}
+
+// NewInfoPkgFromMsg ...
+func NewInfoPkgFromMsg(msg Message) (InfoPkg, error) {
+	var ipkg InfoPkg
+	switch t := msg.Type(); t {
+	case MsgDisconnect:
+		ipkg = &DisconnectInfo{}
+	case MsgConnect:
+		ipkg = &ConnectInfo{}
+	case MsgUserSelf:
+		ipkg = &PlaygroundInfo{}
+	default:
+		return nil, fmt.Errorf("Not found mapped infopkg for the message(%v).", t)
+	}
+
+	if err := ipkg.(Info).UnmarshalBinary(msg.Body()); err != nil {
+		return nil, err
+	}
+	return ipkg, nil
 }
 
 // MarshalListBinary marshal InfoList to bytes.
@@ -119,6 +140,6 @@ func UnmarshalListBinary(infolist InfoList, bs []byte) (unmarshaledLength int, e
 	}
 
 	// drop empty space
-	infolist.Crop(length)
+
 	return unmarshaledLength, nil
 }

@@ -105,9 +105,9 @@ type testUser struct {
 	checkFunc   func(bs []byte, itype m.InfoType)
 }
 
-// Name ...
-func (tu *testUser) Name() string {
-	return "tester"
+// Play ...
+func (tu *testUser) Play() error {
+	return nil
 }
 
 // ID ...
@@ -118,6 +118,12 @@ func (tu *testUser) ID() b.UserID {
 // Room ...
 func (tu *testUser) Room() b.RoomID {
 	return tu.rid
+}
+
+func (tu *testUser) SendError(s string) {
+	si := &m.SpecialMsgInfo{Message: s}
+	bs, _ := si.MarshalBinary()
+	tu.Send(bs, m.InfoSpecialMessage)
 }
 
 // Send ...
@@ -165,7 +171,7 @@ func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 	}
 
 	tu1 := &testUser{id: 1, checkFunc: checkFunc}
-	if err := r.UserJoin(tu1); err != nil {
+	if err := r.UserJoin(tu1, "tester"); err != nil {
 		t.Error(err)
 	}
 
@@ -181,13 +187,13 @@ func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 	tu3 := &testUser{id: 3}
 	tu4 := &testUser{id: 4}
 
-	if err := r.UserJoin(tu2); err != nil {
+	if err := r.UserJoin(tu2, "tester"); err != nil {
 		t.Error(err)
 	}
-	if err := r.UserJoin(tu3); err != nil {
+	if err := r.UserJoin(tu3, "tester"); err != nil {
 		t.Error(err)
 	}
-	if err := r.UserJoin(tu4); err != nil {
+	if err := r.UserJoin(tu4, "tester"); err != nil {
 		t.Error(err)
 	}
 
@@ -220,7 +226,7 @@ func TestRoomDisconnect(t *testing.T) {
 	Open(r, time.Second)
 
 	tu1 := &testUser{id: 1}
-	if err := r.UserJoin(tu1); err != nil {
+	if err := r.UserJoin(tu1, "tester"); err != nil {
 		t.Error(err)
 	}
 
@@ -272,14 +278,14 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 	r := NewRoom(20)
 	Open(r, time.Second)
 
-	if err := r.UserJoin(tu1); err != nil {
+	if err := r.UserJoin(tu1, "tester"); err != nil {
 		t.Error(err)
 	}
 	airplaneByteSize := len(r.cache[tu1.ID()][newballIndex].Buf)
-	if err := r.UserJoin(tu2); err != nil {
+	if err := r.UserJoin(tu2, "tester"); err != nil {
 		t.Error(err)
 	}
-	if err := r.UserJoin(tu3); err != nil {
+	if err := r.UserJoin(tu3, "tester"); err != nil {
 		t.Error(err)
 	}
 

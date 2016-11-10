@@ -58,6 +58,13 @@ func (h *Hall) UserJoin(u user.User) error {
 func (h *Hall) UserLeft(userID b.UserID) error {
 	h.uM.Lock()
 	defer h.uM.Unlock()
+	h.rM.RLock()
+	defer h.rM.RUnlock()
+
+	// TODO: maybe we need a user room map.
+	for _, room := range h.rooms {
+		room.UserLeft(userID)
+	}
 
 	delete(h.users, userID)
 	return nil
@@ -79,28 +86,28 @@ func (h *Hall) Status() uint8 {
 // handleConnect ...
 func (h *Hall) handleConnect(ci *m.ConnectInfo) {
 	// filter wrong UID in recieve message
+	h.rM.RLock()
+	defer h.rM.RUnlock()
+
 	r, ok := h.rooms[ci.RID]
 	if !ok {
-		si := &m.SpecialMsgInfo{Message: fmt.Sprintf("Room %d is not exist!", ci.RID)}
-		bs, _ := si.MarshalBinary()
-		h.users[ci.UID].Send(bs, m.InfoSpecialMessage)
+		h.users[ci.UID].SendError(fmt.Sprintf("Room %d is not exist!", ci.RID))
 		return
 	}
 
-	err := r.UserJoin(h.users[ci.UID])
+	err := r.UserJoin(h.users[ci.UID], ci.Nickname)
 	if err != nil {
-		si := new(m.SpecialMsgInfo)
+		var s string
 		switch err {
 		case errRoomIsFull:
-			si.Message = fmt.Sprintf("Room %d is full!", ci.RID)
+			s = fmt.Sprintf("Room %d is full!", ci.RID)
 		case errUserAlreadyJoin:
-			si.Message = fmt.Sprintf("You have joined Room %d!", ci.RID)
+			s = fmt.Sprintf("You have joined Room %d!", ci.RID)
 		default:
 			logger.Errorln(err)
-			si.Message = b.ErrServerError.Error()
+			s = b.ErrServerError.Error()
 		}
-		bs, _ := si.MarshalBinary()
-		h.users[ci.UID].Send(bs, m.InfoSpecialMessage)
+		h.users[ci.UID].SendError(s)
 	}
 }
 

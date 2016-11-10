@@ -110,7 +110,7 @@ func (r *Room) Users() (users []b.UserID) {
 
 // UserJoin ...
 // now this function will create an Airplane.
-func (r *Room) UserJoin(u user.User) error {
+func (r *Room) UserJoin(u user.User, name string) error {
 	r.mapM.Lock()
 	defer r.mapM.Unlock()
 
@@ -130,7 +130,7 @@ func (r *Room) UserJoin(u user.User) error {
 	r.cache[uid] = newCacheMap
 	u.BindRoom(r.id, r.infoChan)
 
-	airplane, err := pg.CreateAirplaneInPlayGround(uid, u.Name(), 1, 0)
+	airplane, err := pg.CreateAirplaneInPlayGround(uid, name, 1, 0)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,6 @@ func (r *Room) UserJoin(u user.User) error {
 
 // UserLeft ...
 func (r *Room) UserLeft(userID b.UserID) error {
-
 	r.mapM.Lock()
 	defer r.mapM.Unlock()
 

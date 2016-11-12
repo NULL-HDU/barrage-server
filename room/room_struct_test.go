@@ -122,12 +122,17 @@ func (tu *testUser) Room() b.RoomID {
 
 func (tu *testUser) SendError(s string) {
 	si := &m.SpecialMsgInfo{Message: s}
-	bs, _ := si.MarshalBinary()
-	tu.Send(bs, m.InfoSpecialMessage)
+	tu.Send(si)
 }
 
 // Send ...
-func (tu *testUser) Send(bs []byte, itype m.InfoType) {
+func (tu *testUser) Send(ipkg m.InfoPkg) {
+	bs, err := ipkg.Body().MarshalBinary()
+	itype := ipkg.Type()
+	if err != nil {
+		logger.Errorln(err)
+	}
+
 	if tu.checkFunc != nil {
 		tu.checkFunc(bs, itype)
 	} else {

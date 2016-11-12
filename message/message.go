@@ -1,20 +1,24 @@
 package message
 
 import (
-	"barrage-server/base"
+	b "barrage-server/base"
 	"barrage-server/libs/bufbo"
 	"errors"
 	"fmt"
+	"math/rand"
 	"time"
 )
 
-var logger = base.Log
+var logger = b.Log
 
 // MsgType type for message
 type MsgType uint8
 
 const (
 	// backend -> frontend
+
+	// MsgRandomUserID is used when websocket connect is created.
+	MsgRandomUserID MsgType = 0xd4
 
 	// MsgGameOver is used when server will break off.
 	MsgGameOver MsgType = 0x0b
@@ -60,7 +64,7 @@ var infoMsgSendMap = map[InfoType]MsgType{
 // Message is used to get message head, server will analyze message head to decide what task it should
 // do, discard the message or continue to analyze its body according the message type to create InfoPkg.
 type Message interface {
-	base.CommunicationData
+	b.CommunicationData
 	Type() MsgType
 	Timestamp() time.Time
 	Body() []byte
@@ -72,17 +76,24 @@ type msg struct {
 	timestamp time.Time
 }
 
-// NewMessageFromInfo creates instance of Message from given intoType
-// and body.
+// NewMessageFromInfoPkg creates instance of Message from given InfoPkg.
 //
 // This should be used to send message data to frontend
-func NewMessageFromInfo(iType InfoType, body []byte) (Message, error) {
+func NewMessageFromInfoPkg(ipkg InfoPkg) (Message, error) {
+	iType := ipkg.Type()
+	body := ipkg.Body()
+
+	bs, err := body.MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("Info Marshal Error: %s.", err)
+	}
+
 	mType, ok := infoMsgSendMap[iType]
 	if !ok {
 		return nil, fmt.Errorf("Not found mapped message for the infoType(%v).", iType)
 	}
 
-	return NewMessage(mType, body), nil
+	return NewMessage(mType, bs), nil
 }
 
 // NewMessage creates instance of Message from given params.
@@ -158,4 +169,15 @@ func (m *msg) UnmarshalBinary(bs []byte) error {
 	m.body = bs[msgHeadSize:]
 
 	return nil
+}
+
+// NewRandomUserIDMsg create a new message whose type is MsgRandomUserID containing a randomID.
+func NewRandomUserIDMsg() (Message, b.UserID) {
+	randID := uint32(rand.Int31())
+
+	bs := make([]byte, 4)
+	bw := bufbo.NewBEBytesWriter(bs)
+	bw.PutUint32(randID)
+
+	return NewMessage(MsgRandomUserID, bs), b.UserID(randID)
 }

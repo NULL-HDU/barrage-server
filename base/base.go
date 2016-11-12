@@ -28,7 +28,7 @@ var (
 	// errors
 
 	// ErrServerError defines all server error.
-	ErrServerError = errors.New("server error.")
+	ErrServerError = errors.New("Server error.")
 )
 
 // init

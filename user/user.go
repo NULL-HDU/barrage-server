@@ -26,7 +26,7 @@ type User interface {
 
 	//Send is used by room to send bytes to frontend.
 	//Send send bytes in a new goroutine.
-	Send(bs []byte, itype m.InfoType)
+	Send(ipkg m.InfoPkg)
 	//SendError send bytes in a new goroutine.
 	SendError(s string)
 
@@ -95,9 +95,9 @@ func (u *user) SendError(s string) {
 }
 
 // Send ...
-func (u *user) Send(bs []byte, itype m.InfoType) {
+func (u *user) Send(ipkg m.InfoPkg) {
 	go func() {
-		u.sendSync(bs, itype)
+		u.sendSync(ipkg)
 	}()
 }
 
@@ -113,13 +113,12 @@ func (u *user) BindRoom(id b.RoomID, c chan<- m.InfoPkg) {
 // sendSpecialMessage ...
 func (u *user) sendError(s string) {
 	si := &m.SpecialMsgInfo{Message: s}
-	bs, _ := si.MarshalBinary()
-	u.sendSync(bs, m.InfoSpecialMessage)
+	u.sendSync(si)
 }
 
 // sendSync construct message and write bytes to wc.
-func (u *user) sendSync(body []byte, itype m.InfoType) error {
-	msg, err := m.NewMessageFromInfo(itype, body)
+func (u *user) sendSync(ipkg m.InfoPkg) error {
+	msg, err := m.NewMessageFromInfoPkg(ipkg)
 	if err != nil {
 		logger.Errorln(err)
 	}

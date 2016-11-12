@@ -146,11 +146,7 @@ func (r *Room) UserJoin(u user.User, name string) error {
 	// send airplaneCreatedInfo
 	aci := new(m.AirplaneCreatedInfo)
 	aci.Airplane = airplane
-	bs, err = aci.MarshalBinary()
-	if err != nil {
-		return err
-	}
-	u.Send(bs, m.InfoAirplaneCreated)
+	u.Send(aci)
 
 	return nil
 }
@@ -255,8 +251,14 @@ func (r *Room) playgroundBoardCast() {
 		r.constructBytesFor(uid)
 
 		if bs := cache[bufferIndex].Buf; len(bs) > 0 {
+			// TODO: write bytes_cache for every info pkg.
+			pi := new(m.PlaygroundInfo)
+			if err := pi.UnmarshalBinary(bs); err != nil {
+				logger.Errorf("PlaygroundInfo Create Error: %s", err)
+			}
+
 			// send bytes in a new goroutine
-			user.Send(bs, m.InfoPlayground)
+			user.Send(pi)
 		}
 	}
 

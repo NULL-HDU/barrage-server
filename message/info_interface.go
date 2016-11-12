@@ -31,7 +31,7 @@ const (
 
 	// InfoConnect is used when user want to connect game.
 	InfoConnect
-	// InfoDisconnect is used when user want to leave game early.
+	// InfoDisconnect is used when user want to leave game early(now, just leave room to hall).
 	InfoDisconnect
 
 	// Room -> User, Playground -> Room, User -> Room -------------------------

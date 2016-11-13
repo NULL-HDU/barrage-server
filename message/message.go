@@ -56,6 +56,8 @@ var infoMsgSendMap = map[InfoType]MsgType{
 	InfoSpecialMessage:  MsgSpecialMessage,
 	InfoAirplaneCreated: MsgAirplaneCreated,
 	InfoPlayground:      MsgPlayground,
+	InfoConnect:         MsgConnect,
+	InfoDisconnect:      MsgDisconnect,
 }
 
 // Message is the interface implemented by an object that can analyze base form of message

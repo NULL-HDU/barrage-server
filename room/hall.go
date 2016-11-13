@@ -56,17 +56,17 @@ func (h *Hall) UserJoin(u user.User) error {
 // UserLeft ...
 //
 func (h *Hall) UserLeft(userID b.UserID) error {
-	h.uM.Lock()
-	defer h.uM.Unlock()
 	h.rM.RLock()
-	defer h.rM.RUnlock()
-
 	// TODO: maybe we need a user room map.
 	for _, room := range h.rooms {
 		room.UserLeft(userID)
 	}
+	h.rM.RUnlock()
 
+	h.uM.RLock()
 	delete(h.users, userID)
+	h.uM.RUnlock()
+
 	return nil
 }
 

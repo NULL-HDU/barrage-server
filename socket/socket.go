@@ -80,5 +80,7 @@ func (s *socket) HandleFunc(wc *ws.Conn) {
 	u.Play()
 	r.LeftHall(uid)
 
+	logger.Infof("User %d left game. \n", uid)
+	logger.Infof("Close Connect from %v \n", wc.RemoteAddr())
 	wc.Close()
 }

@@ -148,6 +148,8 @@ func (r *Room) UserJoin(u user.User, name string) error {
 	aci.Airplane = airplane
 	u.Send(aci)
 
+	logger.Infof("User %d join room %d. \n", u.ID(), r.id)
+
 	return nil
 }
 
@@ -165,6 +167,8 @@ func (r *Room) UserLeft(userID b.UserID) error {
 	delete(r.users, userID)
 	delete(r.cache, userID)
 
+	logger.Infof("User %d left room %d. \n", userID, r.id)
+
 	return nil
 }
 
@@ -175,7 +179,8 @@ func (r *Room) handlePlayground(pi *m.PlaygroundInfo) {
 
 	byteCache, ok := r.cache[pi.Sender]
 	if !ok {
-		logger.Errorf("Not find user %d in room cache map %d.", pi.Sender, r.id)
+		logger.Errorf("Not find user %d in room cache map %d. \n", pi.Sender, r.id)
+		return
 	}
 
 	bs, err := m.MarshalListBinary(pi.Collisions)
@@ -250,11 +255,12 @@ func (r *Room) playgroundBoardCast() {
 		}
 		r.constructBytesFor(uid)
 
-		if bs := cache[bufferIndex].Buf; len(bs) > 0 {
+		// while lenght of bs is greater than 12, playground info is not empty.
+		if bs := cache[bufferIndex].Buf; len(bs) > 12 {
 			// TODO: write bytes_cache for every info pkg.
 			pi := new(m.PlaygroundInfo)
 			if err := pi.UnmarshalBinary(bs); err != nil {
-				logger.Errorf("PlaygroundInfo Create Error: %s", err)
+				logger.Errorf("PlaygroundInfo Create Error: %s\n", err)
 			}
 
 			// send bytes in a new goroutine
@@ -305,7 +311,7 @@ func (r *Room) HandleInfoPkg(ipkg m.InfoPkg) {
 	case m.InfoAirplaneCreated:
 	case m.InfoSpecialMessage:
 	default:
-		logger.Errorf("Invalid information package! type: %d.", t)
+		logger.Errorf("Invalid information package! type: %d.\n", t)
 	}
 
 	if err != "" {

@@ -34,6 +34,7 @@ func init() {
 	commonHall = NewHall()
 	commonHall.rooms[1] = NewRoom(1)
 	Open(commonHall, time.Minute)
+	Open(commonHall.rooms[1], time.Millisecond*10)
 }
 
 // JoinHall join a user into common hall.
@@ -99,10 +100,21 @@ func Open(r Tiggler, loopDuration time.Duration) {
 		logger.Infof("InfoPkg handler of Room %d closed. \n", r.ID())
 	}()
 
+	if r.ID() == hallID {
+		logger.Infoln("Hall is open!")
+	} else {
+		logger.Infof("Room %d is open \n", r.ID())
+	}
 }
 
 // Close Tiggler.
 // It should send GameOverInfo to client first.
 func Close(r Tiggler) {
 	r.CompareAndSetStatus(roomOpen, roomClose)
+
+	if r.ID() == hallID {
+		logger.Infoln("Hall is close!")
+	} else {
+		logger.Infof("Room %d is close \n", r.ID())
+	}
 }

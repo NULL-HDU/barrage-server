@@ -83,6 +83,13 @@ func (u *user) UploadInfo(ipkg m.InfoPkg) {
 			logger.Errorln(errInvalidUser)
 			return
 		}
+
+		// add Sender to playground info
+		if ipkg.Type() == m.InfoPlayground {
+			pi := ipkg.(*m.PlaygroundInfo)
+			pi.Sender = u.uid
+		}
+
 		u.infoChan <- ipkg
 	}()
 }
@@ -137,11 +144,11 @@ func (u *user) recieveAndUploadMessage() {
 	var cache []byte
 	for {
 		if err := ws.Message.Receive(u.wc, &cache); err != nil {
-			if err != io.EOF {
-				u.sendError(b.ErrServerError.Error())
-				logger.Errorf("Error: %s \n", err)
+			if err == io.EOF {
+				break
 			}
-			break
+			u.sendError(b.ErrServerError.Error())
+			logger.Errorf("Error: %s \n", err)
 		}
 
 		msg, err := m.NewMessageFromBytes(cache)
@@ -163,8 +170,6 @@ func (u *user) recieveAndUploadMessage() {
 
 		u.UploadInfo(ipkg)
 	}
-
-	logger.Infof("Close Connect from %v \n", u.wc.RemoteAddr())
 }
 
 // Play ...

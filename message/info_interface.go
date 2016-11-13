@@ -65,10 +65,18 @@ type InfoList interface {
 func NewInfoPkgFromMsg(msg Message) (InfoPkg, error) {
 	var ipkg InfoPkg
 	switch t := msg.Type(); t {
+	case MsgSpecialMessage:
+		ipkg = &SpecialMsgInfo{}
 	case MsgDisconnect:
 		ipkg = &DisconnectInfo{}
 	case MsgConnect:
 		ipkg = &ConnectInfo{}
+	case MsgAirplaneCreated:
+		ipkg = &AirplaneCreatedInfo{}
+	case MsgGameOver:
+		ipkg = &GameOverInfo{}
+	case MsgPlayground:
+		fallthrough
 	case MsgUserSelf:
 		ipkg = &PlaygroundInfo{}
 	default:

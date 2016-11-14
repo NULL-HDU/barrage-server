@@ -12,62 +12,47 @@ const (
 	collisionInfoSize = 18
 )
 
-type fullBallID struct {
-	uid b.UserID
-	id  b.BallID
-}
-
-// collisionInfo hold information about the collision between A and B.
-type collisionInfo struct {
-	ballIDs []fullBallID
-	damages []b.Damage
-	states  []ball.State
-}
-
-// AInfo return the ballId, damage and state of A.
-func (ci *collisionInfo) AInfo() (b.UserID, b.BallID, b.Damage, ball.State) {
-	return ci.ballIDs[0].uid, ci.ballIDs[0].id, ci.damages[0], ci.states[0]
-}
-
-// BInfo return the ballId, damage and state of B.
-func (ci *collisionInfo) BInfo() (b.UserID, b.BallID, b.Damage, ball.State) {
-	return ci.ballIDs[1].uid, ci.ballIDs[1].id, ci.damages[1], ci.states[1]
+// CollisionInfo hold information about the collision between A and B.
+type CollisionInfo struct {
+	IDs     []b.FullBallID
+	Damages []b.Damage
+	States  []ball.State
 }
 
 // Size ...
-func (ci *collisionInfo) Size() int {
+func (ci *CollisionInfo) Size() int {
 	return collisionInfoSize
 }
 
 // MarshalBinary ...
-func (ci *collisionInfo) MarshalBinary() ([]byte, error) {
+func (ci *CollisionInfo) MarshalBinary() ([]byte, error) {
 	var buffer bytes.Buffer
 	bw := bufbo.NewBEBufWriter(&buffer)
 
 	// full ball id
-	bw.PutUint32(uint32(ci.ballIDs[0].uid))
-	bw.PutUint16(uint16(ci.ballIDs[0].id))
-	bw.PutUint32(uint32(ci.ballIDs[1].uid))
-	bw.PutUint16(uint16(ci.ballIDs[1].id))
+	bw.PutUint32(uint32(ci.IDs[0].UID))
+	bw.PutUint16(uint16(ci.IDs[0].ID))
+	bw.PutUint32(uint32(ci.IDs[1].UID))
+	bw.PutUint16(uint16(ci.IDs[1].ID))
 
 	// damage
-	bw.PutUint8(uint8(ci.damages[0]))
-	bw.PutUint8(uint8(ci.damages[1]))
+	bw.PutUint8(uint8(ci.Damages[0]))
+	bw.PutUint8(uint8(ci.Damages[1]))
 
 	// state
-	isAlive, isKilled, err := ball.AnalyseStateToBytes(ci.states[0])
+	isAlive, isKilled, err := ball.AnalyseStateToBytes(ci.States[0])
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%v the state is %d, while marshaling collisionInfo-A(%v & %v).\n",
-			err, ci.states[0], ci.ballIDs[0], ci.ballIDs[1])
+			"%v the state is %d, while marshaling CollisionInfo-A(%v & %v).\n",
+			err, ci.States[0], ci.IDs[0], ci.IDs[1])
 	}
 	bw.PutUint8(isAlive)
 	bw.PutUint8(isKilled)
-	isAlive, isKilled, err = ball.AnalyseStateToBytes(ci.states[1])
+	isAlive, isKilled, err = ball.AnalyseStateToBytes(ci.States[1])
 	if err != nil {
 		return nil, fmt.Errorf(
-			"%v the state is %d, while marshaling collisionInfo-B(%v & %v).\n",
-			err, ci.states[1], ci.ballIDs[0], ci.ballIDs[1])
+			"%v the state is %d, while marshaling CollisionInfo-B(%v & %v).\n",
+			err, ci.States[1], ci.IDs[0], ci.IDs[1])
 	}
 	bw.PutUint8(isAlive)
 	bw.PutUint8(isKilled)
@@ -77,37 +62,37 @@ func (ci *collisionInfo) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary ...
-func (ci *collisionInfo) UnmarshalBinary(data []byte) error {
-	ci.ballIDs = make([]fullBallID, 2)
-	ci.damages = make([]b.Damage, 2)
-	ci.states = make([]ball.State, 2)
+func (ci *CollisionInfo) UnmarshalBinary(data []byte) error {
+	ci.IDs = make([]b.FullBallID, 2)
+	ci.Damages = make([]b.Damage, 2)
+	ci.States = make([]ball.State, 2)
 
 	br := bufbo.NewBEBytesReader(data)
-	ci.ballIDs[0].uid = b.UserID(br.Uint32())
-	ci.ballIDs[0].id = b.BallID(br.Uint16())
-	ci.ballIDs[1].uid = b.UserID(br.Uint32())
-	ci.ballIDs[1].id = b.BallID(br.Uint16())
+	ci.IDs[0].UID = b.UserID(br.Uint32())
+	ci.IDs[0].ID = b.BallID(br.Uint16())
+	ci.IDs[1].UID = b.UserID(br.Uint32())
+	ci.IDs[1].ID = b.BallID(br.Uint16())
 
-	ci.damages[0] = b.Damage(br.Uint8())
-	ci.damages[1] = b.Damage(br.Uint8())
+	ci.Damages[0] = b.Damage(br.Uint8())
+	ci.Damages[1] = b.Damage(br.Uint8())
 
 	isAlive, isKilled := br.Uint8(), br.Uint8()
 	state, err := ball.AnalyseBytesToState(isAlive, isKilled)
 	if err != nil {
 		return fmt.Errorf(
-			"%v source bytes is isAlive: %d, isKilled: %d, while unmarshaling collisionInfo-A(%v %v).\n",
-			err, isAlive, isKilled, ci.ballIDs[0], ci.ballIDs[1])
+			"%v source bytes is isAlive: %d, isKilled: %d, while unmarshaling CollisionInfo-A(%v %v).\n",
+			err, isAlive, isKilled, ci.IDs[0], ci.IDs[1])
 	}
-	ci.states[0] = state
+	ci.States[0] = state
 
 	isAlive, isKilled = br.Uint8(), br.Uint8()
 	state, err = ball.AnalyseBytesToState(isAlive, isKilled)
 	if err != nil {
 		return fmt.Errorf(
-			"%v source bytes is isAlive: %d, isKilled: %d, while unmarshaling collisionInfo-B(%v %v).\n",
-			err, isAlive, isKilled, ci.ballIDs[0], ci.ballIDs[1])
+			"%v source bytes is isAlive: %d, isKilled: %d, while unmarshaling CollisionInfo-B(%v %v).\n",
+			err, isAlive, isKilled, ci.IDs[0], ci.IDs[1])
 	}
-	ci.states[1] = state
+	ci.States[1] = state
 
 	return nil
 }
@@ -115,7 +100,7 @@ func (ci *collisionInfo) UnmarshalBinary(data []byte) error {
 // CollisionsInfo is used for collision informations transimission.
 type CollisionsInfo struct {
 	length         uint32
-	CollisionInfos []collisionInfo
+	CollisionInfos []*CollisionInfo
 }
 
 // Length return length
@@ -125,7 +110,7 @@ func (csi *CollisionsInfo) Length() int {
 
 // Item return item of CollisionInfos.
 func (csi *CollisionsInfo) Item(index int) b.CommunicationData {
-	return &csi.CollisionInfos[index]
+	return csi.CollisionInfos[index]
 }
 
 // Size return the number of bytes after marshed
@@ -139,7 +124,10 @@ func (csi *CollisionsInfo) Size() int {
 
 // NewItems init CollisionInfos
 func (csi *CollisionsInfo) NewItems(length uint32) {
-	csi.CollisionInfos = make([]collisionInfo, length)
+	csi.CollisionInfos = make([]*CollisionInfo, length)
+	for i := range csi.CollisionInfos {
+		csi.CollisionInfos[i] = new(CollisionInfo)
+	}
 	csi.length = length
 }
 

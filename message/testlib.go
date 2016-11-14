@@ -40,20 +40,20 @@ func generateTestBallsInfo(num int) *BallsInfo {
 func generateTestCollisionsInfo(num int) *CollisionsInfo {
 	csi := &CollisionsInfo{}
 	csi.NewItems(uint32(num))
-	fullBallIDA := fullBallID{
-		uid: b.UserID(uidA),
-		id:  b.BallID(idA),
+	fullBallIDA := b.FullBallID{
+		UID: b.UserID(uidA),
+		ID:  b.BallID(idA),
 	}
-	fullBallIDB := fullBallID{
-		uid: b.UserID(uidB),
-		id:  b.BallID(idB),
+	fullBallIDB := b.FullBallID{
+		UID: b.UserID(uidB),
+		ID:  b.BallID(idB),
 	}
 
 	for i := uint32(0); i < csi.length; i++ {
-		csi.CollisionInfos[i] = collisionInfo{
-			ballIDs: []fullBallID{fullBallIDA, fullBallIDB},
-			damages: []b.Damage{b.Damage(damageA), b.Damage(damageB)},
-			states:  []ball.State{stateA, stateB},
+		csi.CollisionInfos[i] = &CollisionInfo{
+			IDs:     []b.FullBallID{fullBallIDA, fullBallIDB},
+			Damages: []b.Damage{b.Damage(damageA), b.Damage(damageB)},
+			States:  []ball.State{stateA, stateB},
 		}
 	}
 
@@ -61,7 +61,7 @@ func generateTestCollisionsInfo(num int) *CollisionsInfo {
 }
 
 // GenerateTestPlaygroundInfo generate a testing playgroundInfo,
-// ciNum is the number of collisionInfo in playgroundInfo
+// ciNum is the number of CollisionInfo in playgroundInfo
 // diNum is the number of displacementInfo in playgroundInfo
 // niNum is the number of newBallsInfo in playgroundInfo
 func GenerateTestPlaygroundInfo(sender b.UserID, ciNum, diNum, niNum int) *PlaygroundInfo {

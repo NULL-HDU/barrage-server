@@ -42,6 +42,11 @@
 
 * lengthOfCollisionSocketInfos: Uint32, the length of collisionSocketInfoArray.
 
+**disappearInfo**: `ballID(ballID)`
+**disappearInfos**: `lengthOfDisappearInfos(Uint32) + disappearInfoArray(lengthOfDisappearInfos * disappearInfo)`
+
+* lengthOfDisappearInfos: Uint32, the length of disappearInfoArray.
+
 **displacementInfo**: `displacementOfBall(ball)`
 
 **displacementInfos**: `lengthOfDisplacementInfos(Uint32) + displacementInfoArray(lengthOfDisplacementInfos * displacementInfo)`
@@ -119,11 +124,12 @@ message body: `userId(Uint32) + nickname(nickname) + roomNumber(Uint32) + troop(
 
 type value: 12  (0x0c)
 
-message body: `collisionSocketInfos(collisionSocketInfos) + displacementInfos(displacementInfos) + newBallsInfos(newBallsInfos)`
+message body: `newBallsInfos(newBallsInfos) +  displacementInfos(displacementInfos) + collisionSocketInfos(collisionSocketInfos) + disappearInfos(disappearInfos)`
 
-* collisionSocketInfos: collisionSocketInfos, the information about ball collision for socket.
-* displacementInfos: displacementInfos, the information about balls displacement, include death info and disappear info.
 * newBallsInfos: newBallsInfos, the information about new balls.
+* displacementInfos: displacementInfos, the information about balls(only changed balls) displacement.
+* collisionSocketInfos: collisionSocketInfos, the information about ball collision for socket.
+* disappearInfos: disappearInfos, the information about balls which is disappeared.
 
 ## Server send to Client
 
@@ -158,11 +164,15 @@ message body: `airplane(ball) + nickname(nickname)`
 
 type value: 7  (0x07)
 
-message body: `collisionSocketInfos(collisionSocketInfos) + displacementInfos(displacementInfos) + newBallsInfos(newBallsInfos)`
+message body: `newBallsInfos(newBallsInfos) +  displacementInfos(displacementInfos) + collisionSocketInfos(collisionSocketInfos) + disappearInfos(disappearInfos)`
 
-* collisionSocketInfos: collisionSocketInfos, the information about ball collision for socket.
-* displacementInfos: displacementInfos, the information about balls displacement, include death info and disappear info.
 * newBallsInfos: newBallsInfos, the information about new balls.
+* displacementInfos: displacementInfos, the information about balls of other users.
+* collisionSocketInfos: collisionSocketInfos, the information about ball collision for socket.
+* disappearInfos: disappearInfos, the information about balls which is disappeared.
+
+normally, newBallsInfos and disappearInfos is empty, frontend should let other users data in game mode be same as the displacementInfos.
+
 
 ### 10. special message
 

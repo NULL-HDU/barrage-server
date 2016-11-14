@@ -21,6 +21,12 @@ type ImageID uint8
 // Damage is damage of ball.
 type Damage uint8
 
+// FullBallID is the full id of ball, it consists of UserID and BallID
+type FullBallID struct {
+	UID UserID
+	ID  BallID
+}
+
 // Log is the logger of whole sys, it print to stdout and stderr in development env.
 var Log log.Logger
 
@@ -29,6 +35,11 @@ var (
 
 	// ErrServerError defines all server error.
 	ErrServerError = errors.New("Server error.")
+)
+
+const (
+	// SysID is the user id for all ball and info created by server.
+	SysID = 0
 )
 
 // init

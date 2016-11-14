@@ -74,12 +74,13 @@ func TestCollisionsInfoUnmarshalListBinary(t *testing.T) {
 		t.Errorf("Length of unmarshaled bytes should be %d, but get %d.", n, len(bs))
 	}
 
-	uid, id, damage, state := csi.CollisionInfos[3].AInfo()
+	ci := csi.CollisionInfos[3]
+	uid, id, damage, state := ci.IDs[0].UID, ci.IDs[0].ID, ci.Damages[0], ci.States[0]
 	if uid != b.UserID(uidA) || id != b.BallID(idA) ||
 		damage != b.Damage(damageA) || state != ball.State(stateA) {
 		t.Errorf("AInfo of items of CollisionsInfo is not correct! get uid: %v, id: %v, damage: %v, state: %d.", uid, id, damage, state)
 	}
-	uid, id, damage, state = csi.CollisionInfos[3].BInfo()
+	uid, id, damage, state = ci.IDs[1].UID, ci.IDs[1].ID, ci.Damages[1], ci.States[1]
 	if uid != b.UserID(uidB) || id != b.BallID(idB) ||
 		damage != b.Damage(damageB) || state != ball.State(stateB) {
 		t.Errorf("BInfo of items of CollisionsInfo is not correct! get uid: %v, id: %v, damage: %v, state: %d.", uid, id, damage, state)

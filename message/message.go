@@ -25,6 +25,7 @@ const (
 	// MsgSpecialMessage is used to send messages not related to game engine.
 	MsgSpecialMessage MsgType = 0x0a
 	// MsgPlayground is used when backend send balls info to frontend.
+	// this message package dosen't include newBalls.
 	MsgPlayground MsgType = 0x07
 	// MsgAirplaneCreated is used to send airplane of userself to frontend while user connecting
 	// into game.
@@ -33,6 +34,7 @@ const (
 	// frontend -> backend
 
 	// MsgUserSelf is used when frontend send balls info to backend.
+	// this message package include newBalls.
 	MsgUserSelf MsgType = 0x0c
 	// MsgConnect is used when user want to connect game.
 	MsgConnect MsgType = 0x09
@@ -175,7 +177,10 @@ func (m *msg) UnmarshalBinary(bs []byte) error {
 
 // NewRandomUserIDMsg create a new message whose type is MsgRandomUserID containing a randomID.
 func NewRandomUserIDMsg() (Message, b.UserID) {
-	randID := uint32(rand.Int31())
+	randID := rand.Uint32()
+	if randID == uint32(0) {
+		randID = rand.Uint32()
+	}
 
 	bs := make([]byte, 4)
 	bw := bufbo.NewBEBytesWriter(bs)

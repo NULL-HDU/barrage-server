@@ -8,6 +8,7 @@
 *the value in parens is the sturct of this unit*
 
 **userId**: `userId(Uint32)`
+**ballShortID**: `ballShortID(Uint16)`
 
 **bool**: `bool(Uint8)`
 
@@ -20,7 +21,7 @@
 * x: uint16, x axis.
 * y: uint16, y axis.
 
-**ballId**: `userId(userId)+id(Uint16)`
+**ballId**: `userId(userId)+id(ballShortID)`
 
 * userId: Uint32, the id of the creator of this ball
 * id: Uint16, it is a value from 1 - 2*32. After user creating a ball, it add to one. 0 is user's airplane
@@ -42,7 +43,7 @@
 
 * lengthOfCollisionSocketInfos: Uint32, the length of collisionSocketInfoArray.
 
-**disappearInfo**: `ballID(ballID)`
+**disappearInfo**: `ballID(ballShortID)`
 **disappearInfos**: `lengthOfDisappearInfos(Uint32) + disappearInfoArray(lengthOfDisappearInfos * disappearInfo)`
 
 * lengthOfDisappearInfos: Uint32, the length of disappearInfoArray.

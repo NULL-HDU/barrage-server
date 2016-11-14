@@ -10,7 +10,88 @@ import (
 
 const (
 	collisionInfoSize = 18
+	disappearInfoSize = 2
 )
+
+// DisappearsInfo is used for disappear informations transimission.
+type DisappearsInfo struct {
+	IDs []b.BallID
+}
+
+// Size ...
+func (dsi *DisappearsInfo) Size() int {
+	return 4 + len(dsi.IDs)*disappearInfoSize
+}
+
+// MarshalBinary ...
+func (dsi *DisappearsInfo) MarshalBinary() ([]byte, error) {
+	length := len(dsi.IDs)
+	bs := make([]byte, length*disappearInfoSize+4)
+	bw := bufbo.NewBEBytesWriter(bs)
+
+	bw.PutUint32(uint32(length))
+	for _, id := range dsi.IDs {
+		bw.PutUint16(uint16(id))
+	}
+
+	return bs, nil
+}
+
+// UnmarshalBinary ...
+func (dsi *DisappearsInfo) UnmarshalBinary(data []byte) error {
+	br := bufbo.NewBEBytesReader(data)
+
+	length := br.Uint32()
+	dsi.IDs = make([]b.BallID, length)
+	for i := uint32(0); i < length; i++ {
+		dsi.IDs[i] = b.BallID(br.Uint16())
+	}
+
+	return nil
+}
+
+// BallsInfo is used for ball informations transimission.
+type BallsInfo struct {
+	length    uint32
+	BallInfos []ball.Ball
+}
+
+// Length return length
+func (bsi *BallsInfo) Length() int {
+	return int(bsi.length)
+}
+
+// Item return item of BallInfos.
+func (bsi *BallsInfo) Item(index int) b.CommunicationData {
+	return bsi.BallInfos[index]
+}
+
+// Size return the number of bytes after marshed
+func (bsi *BallsInfo) Size() int {
+	sum := 4
+	for _, v := range bsi.BallInfos {
+		sum += v.Size()
+	}
+	return sum
+}
+
+// NewItems init BallInfos
+func (bsi *BallsInfo) NewItems(length uint32) {
+	bsi.BallInfos = make([]ball.Ball, length)
+	for i := range bsi.BallInfos {
+		bsi.BallInfos[i] = ball.NewBall()
+	}
+	bsi.length = length
+}
+
+// Crop crop BallInfos
+func (bsi *BallsInfo) Crop(length uint32) {
+	if bsi.length == length {
+		return
+	}
+	bsi.BallInfos = bsi.BallInfos[:length]
+	bsi.length = length
+}
 
 // CollisionInfo hold information about the collision between A and B.
 type CollisionInfo struct {

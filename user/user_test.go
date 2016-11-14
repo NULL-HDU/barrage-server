@@ -64,7 +64,7 @@ func TestUserSendAndSendErrorAndPlay(t *testing.T) {
 		}
 		u.BindRoom(20, testchan)
 
-		pi := m.GenerateTestPlaygroundInfo(0, 1, 1, 1)
+		pi := m.GenerateTestPlaygroundInfo(0, 1, 1, 1, 1)
 		// test Send
 		u.sendSync(pi)
 		// test SendError
@@ -122,8 +122,8 @@ func TestUserSendAndSendErrorAndPlay(t *testing.T) {
 				if uid := pi.Sender; uid != 0 {
 					t.Errorf("Sender of playgroundInfo is wrong, hope %d, get %d.", 0, uid)
 				}
-				if count := pi.Collisions.Length() + pi.Displacements.Length() + pi.NewBalls.Length(); count != 3 {
-					t.Errorf("Number of info item is wrong, hope %d, get %d.", 3, count)
+				if count := pi.Collisions.Length() + pi.Displacements.Length() + pi.NewBalls.Length() + len(pi.Disappears.IDs); count != 4 {
+					t.Errorf("Number of info item is wrong, hope %d, get %d.", 4, count)
 				}
 			}
 		}

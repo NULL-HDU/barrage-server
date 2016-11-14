@@ -128,8 +128,8 @@ func sendDisconnectInfo(rid b.RoomID) error {
 	return sendMessage(di)
 }
 
-func sendPlaygroundInfo(cin, din, nin int) error {
-	pi := m.GenerateTestPlaygroundInfo(uid, cin, din, nin)
+func sendPlaygroundInfo(cin, din, nin, dsin int) error {
+	pi := m.GenerateTestPlaygroundInfo(uid, nin, din, cin, dsin)
 
 	return sendMessage(pi)
 }
@@ -178,7 +178,7 @@ func sendDisconnectInfoFunc(params []string) {
 }
 
 func sendPlaygroundInfoFunc(params []string) {
-	cin, err := strconv.Atoi(params[0])
+	nin, err := strconv.Atoi(params[2])
 	if err != nil {
 		cmdface.Show(err.Error())
 	}
@@ -186,12 +186,16 @@ func sendPlaygroundInfoFunc(params []string) {
 	if err != nil {
 		cmdface.Show(err.Error())
 	}
-	nin, err := strconv.Atoi(params[2])
+	cin, err := strconv.Atoi(params[0])
+	if err != nil {
+		cmdface.Show(err.Error())
+	}
+	dsin, err := strconv.Atoi(params[0])
 	if err != nil {
 		cmdface.Show(err.Error())
 	}
 
-	if err = sendPlaygroundInfo(cin, din, nin); err != nil {
+	if err = sendPlaygroundInfo(nin, din, cin, dsin); err != nil {
 		cmdface.Show(err.Error())
 	}
 }
@@ -208,7 +212,7 @@ func main() {
 		sendDisconnectInfoFunc)
 	cmdface.AddCommand(
 		"spi",
-		"<cin> <din> <pin>, send playground information",
+		"<nin> <din> <cin> <dsin>, send playground information",
 		sendPlaygroundInfoFunc)
 	cmdface.AddCommand(
 		"uid",

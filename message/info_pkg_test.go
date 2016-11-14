@@ -157,7 +157,7 @@ func TestConnectInfo(t *testing.T) {
 // TestPlaygroundInfo ...
 func TestPlaygroundInfo(t *testing.T) {
 	// MarshalBinary
-	pi := GenerateTestPlaygroundInfo(0, 9, 30, 20)
+	pi := GenerateTestPlaygroundInfo(0, 9, 30, 20, 99)
 	bs, err := pi.MarshalBinary()
 	if err != nil {
 		t.Error(err)
@@ -172,13 +172,16 @@ func TestPlaygroundInfo(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if csiLen := pi.Collisions.Length(); csiLen != 9 {
-		t.Errorf("Length of PlaygroundInfo Collisions should be %d, but get %d.", 9, csiLen)
+	if niLen := pi.NewBalls.Length(); niLen != 9 {
+		t.Errorf("Length of PlaygroundInfo NewBalls should be %d, but get %d.", 20, niLen)
 	}
 	if diLen := pi.Displacements.Length(); diLen != 30 {
-		t.Errorf("Length of PlaygroundInfo Collisions should be %d, but get %d.", 30, diLen)
+		t.Errorf("Length of PlaygroundInfo Displacements should be %d, but get %d.", 30, diLen)
 	}
-	if niLen := pi.NewBalls.Length(); niLen != 20 {
-		t.Errorf("Length of PlaygroundInfo Collisions should be %d, but get %d.", 20, niLen)
+	if csiLen := pi.Collisions.Length(); csiLen != 20 {
+		t.Errorf("Length of PlaygroundInfo Collisions should be %d, but get %d.", 9, csiLen)
+	}
+	if dsiLen := len(pi.Disappears.IDs); dsiLen != 99 {
+		t.Errorf("Length of PlaygroundInfo Disappears should be %d, but get %d.", 99, dsiLen)
 	}
 }

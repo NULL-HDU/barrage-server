@@ -252,9 +252,9 @@ func TestRoomDisconnect(t *testing.T) {
 
 //TestRoomHandlePlaygroundInfo ...
 func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
-	pi1 := m.GenerateTestPlaygroundInfo(1, 10, 20, 30)
-	pi2 := m.GenerateTestPlaygroundInfo(2, 10, 20, 30)
-	pi3 := m.GenerateTestPlaygroundInfo(3, 10, 20, 30)
+	pi1 := m.GenerateTestPlaygroundInfo(1, 10, 20, 30, 40)
+	pi2 := m.GenerateTestPlaygroundInfo(2, 10, 20, 30, 40)
+	pi3 := m.GenerateTestPlaygroundInfo(3, 10, 20, 30, 40)
 	checkFunc := func(bs []byte, itype m.InfoType) {
 		if itype != m.InfoPlayground {
 			return
@@ -265,15 +265,19 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 			t.Error(err)
 		}
 
-		if ciLen := piBak.Collisions.Length(); ciLen != 20 {
-			t.Errorf("Number of CollisionsInfo is wrong, hope %d, get %d.", 20, ciLen)
+		if nbLen := piBak.NewBalls.Length(); nbLen != 22 {
+			t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", 22, nbLen)
 		}
 		if diLen := piBak.Displacements.Length(); diLen != 40 {
 			t.Errorf("Number of Displacements is wrong, hope %d, get %d.", 40, diLen)
 		}
-		if nbLen := piBak.NewBalls.Length(); nbLen != 62 {
-			t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", 62, nbLen)
+		if ciLen := piBak.Collisions.Length(); ciLen != 60 {
+			t.Errorf("Number of CollisionsInfo is wrong, hope %d, get %d.", 60, ciLen)
 		}
+		if dsiLen := len(piBak.Disappears.IDs); dsiLen != 80 {
+			t.Errorf("Number of DisappearsInfo is wrong, hope %d, get %d.", 80, dsiLen)
+		}
+
 	}
 
 	tu1 := &testUser{id: 1, checkFunc: checkFunc}

@@ -221,9 +221,10 @@ func (ci *ConnectInfo) UnmarshalBinary(bs []byte) error {
 type PlaygroundInfo struct {
 	Sender b.UserID
 
-	Collisions    *CollisionsInfo
-	Displacements *BallsInfo
 	NewBalls      *BallsInfo
+	Displacements *BallsInfo
+	Collisions    *CollisionsInfo
+	Disappears    *DisappearsInfo
 }
 
 // Type return type of information
@@ -238,15 +239,15 @@ func (pi *PlaygroundInfo) Body() Info {
 
 // Size return the number of bytes after marshaled.
 func (pi *PlaygroundInfo) Size() int {
-	return pi.Collisions.Size() + pi.Displacements.Size() + pi.NewBalls.Size()
+	return pi.Collisions.Size() + pi.Displacements.Size() + pi.NewBalls.Size() + pi.Disappears.Size()
 }
 
 // MarshalBinary marshal PlaygroundInfo to bytes
 func (pi *PlaygroundInfo) MarshalBinary() ([]byte, error) {
 	var buffer bytes.Buffer
 
-	// Collisions
-	bs, err := MarshalListBinary(pi.Collisions)
+	// NewBalls
+	bs, err := MarshalListBinary(pi.NewBalls)
 	if err != nil {
 		return nil, fmt.Errorf("PlaygroundInfo MarshalError: %v", err)
 	}
@@ -259,8 +260,15 @@ func (pi *PlaygroundInfo) MarshalBinary() ([]byte, error) {
 	}
 	buffer.Write(bs)
 
-	// NewBalls
-	bs, err = MarshalListBinary(pi.NewBalls)
+	// Collisions
+	bs, err = MarshalListBinary(pi.Collisions)
+	if err != nil {
+		return nil, fmt.Errorf("PlaygroundInfo MarshalError: %v", err)
+	}
+	buffer.Write(bs)
+
+	// Disappears
+	bs, err = pi.Disappears.MarshalBinary()
 	if err != nil {
 		return nil, fmt.Errorf("PlaygroundInfo MarshalError: %v", err)
 	}
@@ -271,13 +279,14 @@ func (pi *PlaygroundInfo) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary unmarshal PlaygroundInfo from bytes
 func (pi *PlaygroundInfo) UnmarshalBinary(bs []byte) error {
-	pi.Collisions = &CollisionsInfo{}
-	pi.Displacements = &BallsInfo{}
-	pi.NewBalls = &BallsInfo{}
-	validPartsNum := 3
-	length := 0
+	pi.NewBalls = new(BallsInfo)
+	pi.Displacements = new(BallsInfo)
+	pi.Collisions = new(CollisionsInfo)
+	pi.Disappears = new(DisappearsInfo)
+	validPartsNum := 4
 
-	n, err := UnmarshalListBinary(pi.Collisions, bs)
+	length := 0
+	n, err := UnmarshalListBinary(pi.NewBalls, bs[length:])
 	if err != nil {
 		if err == ErrEmptyInfo {
 			validPartsNum--
@@ -297,7 +306,17 @@ func (pi *PlaygroundInfo) UnmarshalBinary(bs []byte) error {
 	}
 
 	length += n
-	n, err = UnmarshalListBinary(pi.NewBalls, bs[length:])
+	n, err = UnmarshalListBinary(pi.Collisions, bs[length:])
+	if err != nil {
+		if err == ErrEmptyInfo {
+			validPartsNum--
+		} else {
+			return fmt.Errorf("PlaygroundInfo UnmarshalError: %v", err)
+		}
+	}
+
+	length += n
+	err = pi.Disappears.UnmarshalBinary(bs[length:])
 	if err != nil {
 		if err == ErrEmptyInfo {
 			validPartsNum--

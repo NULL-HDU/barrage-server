@@ -16,6 +16,8 @@ const (
 
 	stateA = ball.Alive
 	stateB = ball.Dead
+
+	disappearID = 99
 )
 
 func generateBall() ball.Ball {
@@ -28,9 +30,9 @@ func generateTestBallsInfo(num int) *BallsInfo {
 	bsi := &BallsInfo{}
 
 	bsi.length = uint32(num)
-	bsi.ballInfos = make([]ball.Ball, num)
+	bsi.BallInfos = make([]ball.Ball, num)
 	for i := 0; i < num; i++ {
-		bsi.ballInfos[i] = generateBall()
+		bsi.BallInfos[i] = generateBall()
 	}
 
 	return bsi
@@ -60,15 +62,28 @@ func generateTestCollisionsInfo(num int) *CollisionsInfo {
 	return csi
 }
 
+// generateDisappearsInfo ...
+func generateTestDisappearsInfo(num int) *DisappearsInfo {
+	dsi := new(DisappearsInfo)
+
+	dsi.IDs = make([]b.BallID, num)
+	for i := range dsi.IDs {
+		dsi.IDs[i] = 99
+	}
+
+	return dsi
+}
+
 // GenerateTestPlaygroundInfo generate a testing playgroundInfo,
 // ciNum is the number of CollisionInfo in playgroundInfo
 // diNum is the number of displacementInfo in playgroundInfo
 // niNum is the number of newBallsInfo in playgroundInfo
-func GenerateTestPlaygroundInfo(sender b.UserID, ciNum, diNum, niNum int) *PlaygroundInfo {
+func GenerateTestPlaygroundInfo(sender b.UserID, niNum, diNum, ciNum, dsiNum int) *PlaygroundInfo {
 	return &PlaygroundInfo{
 		Sender:        sender,
-		Collisions:    generateTestCollisionsInfo(ciNum),
-		Displacements: generateTestBallsInfo(diNum),
 		NewBalls:      generateTestBallsInfo(niNum),
+		Displacements: generateTestBallsInfo(diNum),
+		Collisions:    generateTestCollisionsInfo(ciNum),
+		Disappears:    generateTestDisappearsInfo(dsiNum),
 	}
 }

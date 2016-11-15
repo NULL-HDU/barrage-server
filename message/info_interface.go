@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 )
 
 var (
@@ -96,8 +97,11 @@ func MarshalListBinary(infolist InfoList) ([]byte, error) {
 	buffer.Write([]byte{0, 0, 0, 0})
 
 	length := infolist.Length()
-	count := length
+	if length > math.MaxUint32 {
+		return nil, fmt.Errorf("Too many infos, get %d.", length)
+	}
 
+	count := length
 	var bs []byte
 	var err error
 	for i := 0; i < length; i++ {
@@ -127,7 +131,7 @@ func UnmarshalListBinary(infolist InfoList, bs []byte) (unmarshaledLength int, e
 
 	unmarshaledLength = 4
 	count := uint32(0)
-	for count < length {
+	for i := uint32(0); i < length; i++ {
 		item := infolist.Item(int(count))
 		err := item.UnmarshalBinary(bs[unmarshaledLength:])
 		size := item.Size()
@@ -148,6 +152,6 @@ func UnmarshalListBinary(infolist InfoList, bs []byte) (unmarshaledLength int, e
 	}
 
 	// drop empty space
-
+	infolist.Crop(length)
 	return unmarshaledLength, nil
 }

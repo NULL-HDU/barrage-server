@@ -4,6 +4,7 @@ import (
 	"barrage-server/ball"
 	b "barrage-server/base"
 	m "barrage-server/message"
+	tm "barrage-server/testLib/message"
 	"testing"
 	"time"
 )
@@ -252,9 +253,9 @@ func TestRoomDisconnect(t *testing.T) {
 
 //TestRoomHandlePlaygroundInfo ...
 func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
-	pi1 := m.GenerateTestPlaygroundInfo(1, 10, 20, 30, 40)
-	pi2 := m.GenerateTestPlaygroundInfo(2, 10, 20, 30, 40)
-	pi3 := m.GenerateTestPlaygroundInfo(3, 10, 20, 30, 40)
+	pi1 := tm.GenerateTestPlaygroundInfo(1, 10, 20, 30, 40)
+	pi2 := tm.GenerateTestPlaygroundInfo(2, 10, 20, 30, 40)
+	pi3 := tm.GenerateTestPlaygroundInfo(3, 10, 20, 30, 40)
 	checkFunc := func(bs []byte, itype m.InfoType) {
 		if itype != m.InfoPlayground {
 			return
@@ -318,53 +319,4 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 	time.Sleep(time.Second)
 
 	Close(r)
-}
-
-// TestMergeInfoListBytes ...
-func TestCacheInfoListBytes(t *testing.T) {
-	var buffer roomCache
-	size := 0
-	num := 0
-
-	bsi := generateTestStruct(10)
-	size = bsi.Size() - 4
-	num += 10
-
-	bs, _ := m.MarshalListBinary(bsi)
-	cacheInfoListBytes(&buffer, bs)
-
-	if bufLen := len(buffer.Buf); bufLen != size {
-		t.Errorf("Size of buffer is error, hope %d, get %d.", size, bufLen)
-	}
-	if bufNum := int(buffer.Num); bufNum != num {
-		t.Errorf("Num of buffer is error, hope %d, get %d.", num, bufNum)
-	}
-
-	bsi = generateTestStruct(30)
-	size += bsi.Size() - 4
-	num += 30
-
-	bs, _ = m.MarshalListBinary(bsi)
-	cacheInfoListBytes(&buffer, bs)
-
-	if bufLen := len(buffer.Buf); bufLen != size {
-		t.Errorf("Size of buffer is error, hope %d, get %d.", size, bufLen)
-	}
-	if bufNum := int(buffer.Num); bufNum != num {
-		t.Errorf("Num of buffer is error, hope %d, get %d.", num, bufNum)
-	}
-
-	bsi = generateTestStruct(60)
-	size += bsi.Size() - 4
-	num += 60
-
-	bs, _ = m.MarshalListBinary(bsi)
-	cacheInfoListBytes(&buffer, bs)
-
-	if bufLen := len(buffer.Buf); bufLen != size {
-		t.Errorf("Size of buffer is error, hope %d, get %d.", size, bufLen)
-	}
-	if bufNum := int(buffer.Num); bufNum != num {
-		t.Errorf("Num of buffer is error, hope %d, get %d.", num, bufNum)
-	}
 }

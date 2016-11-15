@@ -52,13 +52,12 @@ func (dsi *DisappearsInfo) UnmarshalBinary(data []byte) error {
 
 // BallsInfo is used for ball informations transimission.
 type BallsInfo struct {
-	length    uint32
 	BallInfos []ball.Ball
 }
 
 // Length return length
 func (bsi *BallsInfo) Length() int {
-	return int(bsi.length)
+	return len(bsi.BallInfos)
 }
 
 // Item return item of BallInfos.
@@ -81,16 +80,11 @@ func (bsi *BallsInfo) NewItems(length uint32) {
 	for i := range bsi.BallInfos {
 		bsi.BallInfos[i] = ball.NewBall()
 	}
-	bsi.length = length
 }
 
 // Crop crop BallInfos
 func (bsi *BallsInfo) Crop(length uint32) {
-	if bsi.length == length {
-		return
-	}
 	bsi.BallInfos = bsi.BallInfos[:length]
-	bsi.length = length
 }
 
 // CollisionInfo hold information about the collision between A and B.
@@ -180,13 +174,12 @@ func (ci *CollisionInfo) UnmarshalBinary(data []byte) error {
 
 // CollisionsInfo is used for collision informations transimission.
 type CollisionsInfo struct {
-	length         uint32
 	CollisionInfos []*CollisionInfo
 }
 
 // Length return length
 func (csi *CollisionsInfo) Length() int {
-	return int(csi.length)
+	return len(csi.CollisionInfos)
 }
 
 // Item return item of CollisionInfos.
@@ -209,14 +202,9 @@ func (csi *CollisionsInfo) NewItems(length uint32) {
 	for i := range csi.CollisionInfos {
 		csi.CollisionInfos[i] = new(CollisionInfo)
 	}
-	csi.length = length
 }
 
 // Crop crop CollisionInfos
 func (csi *CollisionsInfo) Crop(length uint32) {
-	if csi.length == length {
-		return
-	}
 	csi.CollisionInfos = csi.CollisionInfos[:length]
-	csi.length = length
 }

@@ -74,12 +74,12 @@ type Ball interface {
 	UID() b.UserID
 	ID() b.BallID
 
-	HP() hp
-	Damage() b.Damage
-	SetHP(hp)
+	// HP() hp
+	// Damage() b.Damage
+	// SetHP(hp)
 
-	// Position() (x, y uint16)
-	IsDisappear() bool
+	// // Position() (x, y uint16)
+	// IsDisappear() bool
 }
 
 type ball struct {
@@ -144,6 +144,15 @@ func NewBallFromBytes(b []byte) (Ball, error) {
 // NewBall create a nil-value ball
 func NewBall() Ball {
 	return &ball{}
+}
+
+// NewBallWithSpecialID create a nil-value ball
+func NewBallWithSpecialID(uid b.UserID, id b.BallID) Ball {
+	return &ball{
+		uid:   uid,
+		id:    id,
+		state: Alive,
+	}
 }
 
 func (bl *ball) UID() b.UserID {

@@ -1,65 +1,16 @@
 package room
 
 import (
+	"barrage-server/ball"
 	b "barrage-server/base"
 	m "barrage-server/message"
 	pg "barrage-server/playground"
 	"barrage-server/user"
-	"encoding/binary"
 	"fmt"
 	"sync"
 )
 
 var rmLimit = b.RoomMembersLimit
-
-const (
-	collisionIndex = iota
-	displaceIndex
-	newballIndex
-
-	// cache data for send to self client.
-	bufferIndex
-)
-
-// generateCacheMap create and init a cache map
-func generateCacheMap() (cacheMap []roomCache) {
-	cacheMap = make([]roomCache, 4)
-	return
-}
-
-type roomCache struct {
-	Num uint32
-	Buf []byte
-}
-
-// clearCache set Num to 0 and truncate the Buf
-func clearCache(cache *roomCache) {
-	cache.Num = 0
-	cache.Buf = cache.Buf[:0]
-}
-
-// cacheInfoListBytes add InfoList bytes into roomCache.
-// This function will count the number of Info and connect rest bytes.
-func cacheInfoListBytes(rc *roomCache, nb []byte) {
-	if len(nb) <= 4 {
-		return
-	}
-
-	// calculate new number
-	n1 := rc.Num
-	n2 := binary.BigEndian.Uint32(nb)
-	num := n1 + n2
-	if n1 > num {
-		// n1 > num,  there are too many informations, drop them
-		logger.Warnf("Too many informations in a list! Get %d.", n2)
-		return
-	}
-
-	// set new number
-	rc.Num = num
-	// connect them
-	rc.Buf = append(rc.Buf, nb[4:]...)
-}
 
 // Room marshal and cache infoes from playground sorting them by info sender.
 // When boardcast infoes from background, Room chooses and combines info bytes
@@ -68,9 +19,9 @@ type Room struct {
 	mapM    sync.RWMutex
 	statusM sync.RWMutex
 
-	users map[b.UserID]user.User
-	cache map[b.UserID][]roomCache
-	id    b.RoomID
+	users      map[b.UserID]user.User
+	playground pg.Playground
+	id         b.RoomID
 
 	//TODO: add infoChan for playground
 	infoChan chan m.InfoPkg
@@ -84,7 +35,7 @@ func NewRoom(id b.RoomID) (r *Room) {
 	r = new(Room)
 	r.id = id
 	r.users = make(map[b.UserID]user.User)
-	r.cache = make(map[b.UserID][]roomCache)
+	r.playground = pg.NewPlayground()
 	r.infoChan = make(chan m.InfoPkg, 10)
 
 	return
@@ -125,9 +76,7 @@ func (r *Room) UserJoin(u user.User, name string) error {
 
 	uid := u.ID()
 	r.users[uid] = u
-	// TODO: cache map also should be cache. (cache map list pool for every room.)
-	newCacheMap := generateCacheMap()
-	r.cache[uid] = newCacheMap
+	r.playground.AddUser(uid)
 	u.BindRoom(r.id, r.infoChan)
 
 	airplane, err := pg.CreateAirplaneInPlayGround(uid, name, 1, 0)
@@ -135,13 +84,15 @@ func (r *Room) UserJoin(u user.User, name string) error {
 		return err
 	}
 
-	// cache airplane message
-	bs, err := airplane.MarshalBinary()
-	if err != nil {
-		return err
-	}
-	newCacheMap[newballIndex].Num = 1
-	newCacheMap[newballIndex].Buf = bs
+	r.playground.PutPkg(&m.PlaygroundInfo{
+		Sender: uid,
+		NewBalls: &m.BallsInfo{
+			BallInfos: []ball.Ball{airplane},
+		},
+		Displacements: new(m.BallsInfo),
+		Collisions:    new(m.CollisionsInfo),
+		Disappears:    new(m.DisappearsInfo),
+	})
 
 	// send airplaneCreatedInfo
 	aci := new(m.AirplaneCreatedInfo)
@@ -164,8 +115,8 @@ func (r *Room) UserLeft(userID b.UserID) error {
 	}
 
 	JoinHall(u)
+	r.playground.DeleteUser(userID)
 	delete(r.users, userID)
-	delete(r.cache, userID)
 
 	logger.Infof("User %d left room %d. \n", userID, r.id)
 
@@ -177,29 +128,14 @@ func (r *Room) handlePlayground(pi *m.PlaygroundInfo) {
 	r.mapM.Lock()
 	defer r.mapM.Unlock()
 
-	byteCache, ok := r.cache[pi.Sender]
-	if !ok {
-		logger.Errorf("Not find user %d in room cache map %d. \n", pi.Sender, r.id)
-		return
+	if err := r.playground.PutPkg(pi); err != nil {
+		if err == pg.ErrNotFoundUser {
+			logger.Errorf("Not find user %d in room cache map %d. \n", pi.Sender, r.id)
+		} else {
+			logger.Errorln(err)
+		}
 	}
 
-	bs, err := m.MarshalListBinary(pi.Collisions)
-	if err != nil {
-		logger.Errorln(err)
-	}
-	cacheInfoListBytes(&byteCache[collisionIndex], bs)
-
-	bs, err = m.MarshalListBinary(pi.Displacements)
-	if err != nil {
-		logger.Errorln(err)
-	}
-	cacheInfoListBytes(&byteCache[displaceIndex], bs)
-
-	bs, err = m.MarshalListBinary(pi.NewBalls)
-	if err != nil {
-		logger.Errorln(err)
-	}
-	cacheInfoListBytes(&byteCache[newballIndex], bs)
 }
 
 // handleDisconnect ...
@@ -215,66 +151,22 @@ func (r *Room) handleDisconnect(dsi *m.DisconnectInfo) {
 	r.UserLeft(userID)
 }
 
-// constructApartBytesFor append bytes of partIndex in r.cache of other user.
-func (r *Room) constructApartBytesFor(uid b.UserID, partIndex int) {
-	bufferCache := &r.cache[uid][bufferIndex]
-	lenOffset := len(bufferCache.Buf)
-	listItemCount := uint32(0)
-
-	bufferCache.Buf = append(bufferCache.Buf, make([]byte, 4)...)
-
-	for _uid, rc := range r.cache {
-		if _uid == uid {
-			continue
-		}
-		listItemCount += rc[partIndex].Num
-		bufferCache.Buf = append(bufferCache.Buf, rc[partIndex].Buf...)
-	}
-
-	binary.BigEndian.PutUint32(bufferCache.Buf[lenOffset:], listItemCount)
-}
-
-// constructBytesFor connect bytes slice into playgroundInfoPkg.
-func (r *Room) constructBytesFor(uid b.UserID) {
-	r.constructApartBytesFor(uid, collisionIndex)
-	r.constructApartBytesFor(uid, displaceIndex)
-	r.constructApartBytesFor(uid, newballIndex)
-}
-
 // playgroundBoardCast ...
 func (r *Room) playgroundBoardCast() {
 	r.mapM.Lock()
 	defer r.mapM.Unlock()
 
-	// construct message and send
-	for uid, user := range r.users {
-		cache, ok := r.cache[uid]
+	pis := r.playground.PkgsForEachUser()
+
+	for _, pi := range pis {
+		u, ok := r.users[pi.Reciever]
 		if !ok {
-			logger.Errorf("Not find user %d in room cache map %d.", uid, r.id)
+			logger.Errorf("Not find user %d in room cache map %d.", u.ID(), r.id)
 			continue
 		}
-		r.constructBytesFor(uid)
-
-		// while lenght of bs is greater than 12, playground info is not empty.
-		if bs := cache[bufferIndex].Buf; len(bs) > 12 {
-			// TODO: write bytes_cache for every info pkg.
-			pi := new(m.PlaygroundInfo)
-			if err := pi.UnmarshalBinary(bs); err != nil {
-				logger.Errorf("PlaygroundInfo Create Error: %s\n", err)
-			}
-
-			// send bytes in a new goroutine
-			user.Send(pi)
-		}
+		u.Send(pi)
 	}
 
-	// clear cache
-	for _, cache := range r.cache {
-		clearCache(&cache[collisionIndex])
-		clearCache(&cache[displaceIndex])
-		clearCache(&cache[newballIndex])
-		clearCache(&cache[bufferIndex])
-	}
 }
 
 // InfoChan ...

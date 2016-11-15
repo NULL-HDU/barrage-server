@@ -219,7 +219,9 @@ func (ci *ConnectInfo) UnmarshalBinary(bs []byte) error {
 
 // PlaygroundInfo exchange informations among User, Room and Playground.
 type PlaygroundInfo struct {
-	Sender b.UserID
+	Sender     b.UserID
+	Reciever   b.UserID
+	CacheBytes []byte
 
 	NewBalls      *BallsInfo
 	Displacements *BallsInfo
@@ -244,6 +246,10 @@ func (pi *PlaygroundInfo) Size() int {
 
 // MarshalBinary marshal PlaygroundInfo to bytes
 func (pi *PlaygroundInfo) MarshalBinary() ([]byte, error) {
+	if pi.CacheBytes != nil {
+		return pi.CacheBytes, nil
+	}
+
 	var buffer bytes.Buffer
 
 	// NewBalls
@@ -274,7 +280,8 @@ func (pi *PlaygroundInfo) MarshalBinary() ([]byte, error) {
 	}
 	buffer.Write(bs)
 
-	return buffer.Bytes(), nil
+	pi.CacheBytes = buffer.Bytes()
+	return pi.CacheBytes, nil
 }
 
 // UnmarshalBinary unmarshal PlaygroundInfo from bytes

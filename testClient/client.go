@@ -4,6 +4,7 @@ import (
 	b "barrage-server/base"
 	"barrage-server/libs/cmdface"
 	m "barrage-server/message"
+	tm "barrage-server/testLib/message"
 	"encoding/binary"
 	"fmt"
 	"golang.org/x/net/websocket"
@@ -129,7 +130,7 @@ func sendDisconnectInfo(rid b.RoomID) error {
 }
 
 func sendPlaygroundInfo(cin, din, nin, dsin int) error {
-	pi := m.GenerateTestPlaygroundInfo(uid, nin, din, cin, dsin)
+	pi := tm.GenerateTestPlaygroundInfo(uid, nin, din, cin, dsin)
 
 	return sendMessage(pi)
 }

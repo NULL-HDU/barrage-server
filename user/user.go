@@ -88,6 +88,7 @@ func (u *user) UploadInfo(ipkg m.InfoPkg) {
 		if ipkg.Type() == m.InfoPlayground {
 			pi := ipkg.(*m.PlaygroundInfo)
 			pi.Sender = u.uid
+			pi.Reciever = b.SysID
 		}
 
 		u.infoChan <- ipkg

@@ -2,6 +2,7 @@ package user
 
 import (
 	m "barrage-server/message"
+	tm "barrage-server/testLib/message"
 	"golang.org/x/net/websocket"
 	"net/http"
 	"sync"
@@ -64,7 +65,7 @@ func TestUserSendAndSendErrorAndPlay(t *testing.T) {
 		}
 		u.BindRoom(20, testchan)
 
-		pi := m.GenerateTestPlaygroundInfo(0, 1, 1, 1, 1)
+		pi := tm.GenerateTestPlaygroundInfo(0, 1, 1, 1, 1)
 		// test Send
 		u.sendSync(pi)
 		// test SendError

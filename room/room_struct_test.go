@@ -142,8 +142,9 @@ func (tu *testUser) Send(ipkg m.InfoPkg) {
 }
 
 // UploadInfo ...
-func (tu *testUser) UploadInfo(infopkg m.InfoPkg) {
+func (tu *testUser) UploadInfo(infopkg m.InfoPkg) error {
 	tu.infopkgChan <- infopkg
+	return nil
 }
 
 // BindRoom ...
@@ -225,7 +226,7 @@ func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 	}
 
 	if lenUser := len(commonHall.users); lenUser != 2 {
-		t.Errorf("Number of users in commonHall should be %d, but get %d.", 2, lenUser)
+		t.Errorf("Number of users in CommonHall should be %d, but get %d.", 2, lenUser)
 	}
 
 	users = r.Users()

@@ -130,7 +130,7 @@ func sendDisconnectInfo(rid b.RoomID) error {
 }
 
 func sendPlaygroundInfo(cin, din, nin, dsin int) error {
-	pi := tm.GenerateTestPlaygroundInfo(uid, nin, din, cin, dsin)
+	pi := tm.GenerateTestRandomPlaygroundInfo(uid, nin, din, cin, dsin)
 
 	return sendMessage(pi)
 }
@@ -144,6 +144,51 @@ func showInfoPkgList() {
 		count++
 		ipkgNode = ipkgNode.next
 	}
+}
+
+func showInfoPkg(n int) {
+	ipkgNode := ipkgsLinkList
+	count, found := 0, false
+	if n == 0 && ipkgNode != nil {
+		found = true
+	}
+
+	for ipkgNode != nil && count != n {
+		ipkgNode = ipkgNode.next
+		count++
+		found = true
+	}
+
+	if !found {
+		cmdface.Show(fmt.Sprintf("Not found package %d.\n", n))
+		return
+	}
+
+	ipkg := ipkgNode.ipkg
+	cmdface.Show(fmt.Sprintf("%s:\n", infoTypeMap[ipkg.Type()]))
+
+	switch ipkg.Type() {
+	case m.InfoPlayground:
+		pi := ipkg.Body().(*m.PlaygroundInfo)
+		cmdface.Show(fmt.Sprintf("Balls: %d\n", pi.Displacements.Length()))
+		cmdface.Show(fmt.Sprintf("Collisions: %d\n", pi.Collisions.Length()))
+	case m.InfoAirplaneCreated:
+		ai := ipkg.Body().(*m.AirplaneCreatedInfo)
+		cmdface.Show(fmt.Sprintf("uid: %d\n", ai.Airplane.UID()))
+		cmdface.Show(fmt.Sprintf("id: %d\n", ai.Airplane.ID()))
+		cmdface.Show(fmt.Sprintf("v: %v\n", ai.Airplane))
+	default:
+		cmdface.Show(fmt.Sprintf("v: %v\n", ipkg.Body()))
+	}
+
+}
+
+func showInfoPkgFunc(params []string) {
+	n, err := strconv.Atoi(params[0])
+	if err != nil {
+		cmdface.Show(err.Error())
+	}
+	showInfoPkg(n)
 }
 
 func showInfoPkgListFunc(params []string) {
@@ -219,6 +264,10 @@ func main() {
 		"uid",
 		"show uid fron server.",
 		showUidFunc)
+	cmdface.AddCommand(
+		"pkg",
+		"show the specialification of info packages",
+		showInfoPkgFunc)
 	cmdface.AddCommand(
 		"pkgs",
 		"show all received info packages",

@@ -154,7 +154,7 @@ func (h *Hall) HandleInfoPkg(ipkg m.InfoPkg) {
 		}
 		h.handleConnect(ci)
 	default:
-		logger.Errorf("Invalid information package! type: %d.", t)
+		logger.Errorf("Invalid information package! type: %d.\n", t)
 	}
 
 	if err != "" {

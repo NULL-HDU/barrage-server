@@ -30,13 +30,13 @@ var (
 	errUserAlreadyJoin = errors.New("User already join.")
 )
 
+// CommonHall is the default entity of hall for all users.
 var commonHall *Hall
 
 func init() {
 	commonHall = NewHall()
-	commonHall.rooms[1] = NewRoom(1)
 	Open(commonHall, time.Minute)
-	Open(commonHall.rooms[1], time.Millisecond*10)
+	Open(commonHall.rooms[b.DefaultRoomID], b.DefaultRoomBoardCastDuration)
 }
 
 // JoinHall join a user into common hall.

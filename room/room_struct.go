@@ -62,23 +62,11 @@ func (r *Room) Users() (users []b.UserID) {
 // UserJoin ...
 // now this function will create an Airplane.
 func (r *Room) UserJoin(u user.User, name string) error {
-	r.mapM.Lock()
-	defer r.mapM.Unlock()
-
-	if len(r.users) >= rmLimit {
-		return errRoomIsFull
-	}
-
-	_, ok := r.users[u.ID()]
-	if ok {
-		return errUserAlreadyJoin
+	if err := r.userJoin(u); err != nil {
+		return err
 	}
 
 	uid := u.ID()
-	r.users[uid] = u
-	r.playground.AddUser(uid)
-	u.BindRoom(r.id, r.infoChan)
-
 	airplane, err := pg.CreateAirplaneInPlayGround(uid, name, 1, 0)
 	if err != nil {
 		return err
@@ -100,6 +88,28 @@ func (r *Room) UserJoin(u user.User, name string) error {
 	u.Send(aci)
 
 	logger.Infof("User %d join room %d. \n", u.ID(), r.id)
+
+	return nil
+}
+
+// userJoin ...
+func (r *Room) userJoin(u user.User) error {
+	r.mapM.Lock()
+	defer r.mapM.Unlock()
+
+	if len(r.users) >= rmLimit {
+		return errRoomIsFull
+	}
+
+	uid := u.ID()
+	_, ok := r.users[uid]
+	if ok {
+		return errUserAlreadyJoin
+	}
+
+	r.users[uid] = u
+	r.playground.AddUser(uid)
+	u.BindRoom(r.id, r.infoChan)
 
 	return nil
 }
@@ -159,12 +169,14 @@ func (r *Room) playgroundBoardCast() {
 	pis := r.playground.PkgsForEachUser()
 
 	for _, pi := range pis {
-		u, ok := r.users[pi.Reciever]
+		u, ok := r.users[pi.Receiver]
 		if !ok {
 			logger.Errorf("Not find user %d in room cache map %d.", u.ID(), r.id)
 			continue
 		}
-		u.Send(pi)
+		if len(pi.CacheBytes) > 16 {
+			u.Send(pi)
+		}
 	}
 
 }

@@ -221,7 +221,7 @@ func main() {
 		showUidFunc)
 	cmdface.AddCommand(
 		"pkgs",
-		"show all recieved info packages",
+		"show all received info packages",
 		showInfoPkgListFunc)
 	cmdface.AddCommand(
 		"clean",

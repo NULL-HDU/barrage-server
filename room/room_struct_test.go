@@ -181,14 +181,6 @@ func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 		t.Error(err)
 	}
 
-	airplane, err := ball.NewBallFromBytes(r.cache[tu1.ID()][newballIndex].Buf)
-	if err != nil {
-		t.Error(err)
-	}
-	if airplaneID := airplane.UID(); airplaneID != 1 {
-		t.Errorf("User id of airplane should be %d, but get %d.", 1, airplaneID)
-	}
-
 	tu2 := &testUser{id: 2}
 	tu3 := &testUser{id: 3}
 	tu4 := &testUser{id: 4}
@@ -196,6 +188,23 @@ func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 	if err := r.UserJoin(tu2, "tester"); err != nil {
 		t.Error(err)
 	}
+	pi := new(m.PlaygroundInfo)
+	if err := pi.UnmarshalBinary(r.playground.PkgsForEachUser()[0].CacheBytes); err != nil {
+		t.Error(err)
+	}
+	if lenNewBalls := pi.NewBalls.Length(); lenNewBalls != 0 {
+		t.Errorf("Length of newBalls should be %d, but get %d.", 0, lenNewBalls)
+	}
+	if lenDisplace := pi.Displacements.Length(); lenDisplace != 1 {
+		t.Errorf("Length of Displace should be %d, but get %d.", 0, lenDisplace)
+	}
+	if lenCollisions := pi.Collisions.Length(); lenCollisions != 0 {
+		t.Errorf("Length of Collisions should be %d, but get %d.", 0, lenCollisions)
+	}
+	if lenDisappears := len(pi.Disappears.IDs); lenDisappears != 0 {
+		t.Errorf("Length of disappears should be %d, but get %d.", 0, lenDisappears)
+	}
+
 	if err := r.UserJoin(tu3, "tester"); err != nil {
 		t.Error(err)
 	}
@@ -253,9 +262,9 @@ func TestRoomDisconnect(t *testing.T) {
 
 //TestRoomHandlePlaygroundInfo ...
 func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
-	pi1 := tm.GenerateTestPlaygroundInfo(1, 10, 20, 30, 40)
-	pi2 := tm.GenerateTestPlaygroundInfo(2, 10, 20, 30, 40)
-	pi3 := tm.GenerateTestPlaygroundInfo(3, 10, 20, 30, 40)
+	pi1 := tm.GenerateTestRandomPlaygroundInfo(1, 25, 40, 15, 20)
+	pi2 := tm.GenerateTestRandomPlaygroundInfo(2, 25, 40, 15, 20)
+	pi3 := tm.GenerateTestRandomPlaygroundInfo(3, 25, 40, 15, 20)
 	checkFunc := func(bs []byte, itype m.InfoType) {
 		if itype != m.InfoPlayground {
 			return
@@ -266,17 +275,17 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 			t.Error(err)
 		}
 
-		if nbLen := piBak.NewBalls.Length(); nbLen != 22 {
-			t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", 22, nbLen)
+		if nbLen := piBak.NewBalls.Length(); nbLen != 0 {
+			t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", 0, nbLen)
 		}
-		if diLen := piBak.Displacements.Length(); diLen != 40 {
-			t.Errorf("Number of Displacements is wrong, hope %d, get %d.", 40, diLen)
+		if diLen := piBak.Displacements.Length(); diLen != 132 {
+			t.Errorf("Number of Displacements is wrong, hope %d, get %d.", 132, diLen)
 		}
-		if ciLen := piBak.Collisions.Length(); ciLen != 60 {
-			t.Errorf("Number of CollisionsInfo is wrong, hope %d, get %d.", 60, ciLen)
+		if ciLen := piBak.Collisions.Length(); ciLen != 30 {
+			t.Errorf("Number of CollisionsInfo is wrong, hope %d, get %d.", 30, ciLen)
 		}
-		if dsiLen := len(piBak.Disappears.IDs); dsiLen != 80 {
-			t.Errorf("Number of DisappearsInfo is wrong, hope %d, get %d.", 80, dsiLen)
+		if dsiLen := len(piBak.Disappears.IDs); dsiLen != 0 {
+			t.Errorf("Number of DisappearsInfo is wrong, hope %d, get %d.", 0, dsiLen)
 		}
 
 	}
@@ -291,7 +300,6 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 	if err := r.UserJoin(tu1, "tester"); err != nil {
 		t.Error(err)
 	}
-	airplaneByteSize := len(r.cache[tu1.ID()][newballIndex].Buf)
 	if err := r.UserJoin(tu2, "tester"); err != nil {
 		t.Error(err)
 	}
@@ -301,17 +309,6 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 
 	tu1.UploadInfo(pi1)
 	time.Sleep(time.Millisecond * 100)
-
-	// Test handlePlayground
-	if ciSize, pCiSize := len(r.cache[1][collisionIndex].Buf), pi1.Collisions.Size()-4; ciSize != pCiSize {
-		t.Errorf("Number of CollisionsInfo is wrong, hope %d, get %d.", pCiSize, ciSize)
-	}
-	if diSize, pDiSize := len(r.cache[1][displaceIndex].Buf), pi1.Displacements.Size()-4; diSize != pDiSize {
-		t.Errorf("Number of Displacements is wrong, hope %d, get %d.", pDiSize, diSize)
-	}
-	if nbSize, pNbSize := len(r.cache[1][newballIndex].Buf), pi1.NewBalls.Size()-4+airplaneByteSize; nbSize != pNbSize {
-		t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", pNbSize, nbSize)
-	}
 
 	tu2.UploadInfo(pi2)
 	tu3.UploadInfo(pi3)

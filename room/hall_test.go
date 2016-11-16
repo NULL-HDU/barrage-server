@@ -86,7 +86,7 @@ func TestHallHandleInfoPkg(t *testing.T) {
 	tu1.UploadInfo(ci)
 	time.Sleep(10 * time.Millisecond)
 	if count != 1 {
-		t.Errorf("tu1 should join failed and recieve a special message, but get count %d.", count)
+		t.Errorf("tu1 should join failed and receive a special message, but get count %d.", count)
 	}
 	count = 0
 

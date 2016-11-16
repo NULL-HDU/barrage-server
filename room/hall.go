@@ -56,18 +56,29 @@ func (h *Hall) UserJoin(u user.User) error {
 // UserLeft ...
 //
 func (h *Hall) UserLeft(userID b.UserID) error {
-	h.rM.RLock()
-	// TODO: maybe we need a user room map.
-	for _, room := range h.rooms {
-		room.UserLeft(userID)
-	}
-	h.rM.RUnlock()
-
-	h.uM.RLock()
-	delete(h.users, userID)
-	h.uM.RUnlock()
+	h.userLeftFromAllRooms(userID)
+	h.userLeftHall(userID)
 
 	return nil
+}
+
+// userLeftFromAllRooms ...
+func (h *Hall) userLeftFromAllRooms(uid b.UserID) {
+	h.rM.RLock()
+	defer h.rM.RUnlock()
+
+	// TODO: maybe we need a user room map.
+	for _, room := range h.rooms {
+		room.UserLeft(uid)
+	}
+}
+
+// userLeftHall ...
+func (h *Hall) userLeftHall(uid b.UserID) {
+	h.uM.Lock()
+	defer h.uM.Unlock()
+
+	delete(h.users, uid)
 }
 
 // InfoChan ...
@@ -85,30 +96,49 @@ func (h *Hall) Status() uint8 {
 
 // handleConnect ...
 func (h *Hall) handleConnect(ci *m.ConnectInfo) {
-	// filter wrong UID in recieve message
-	h.rM.RLock()
-	defer h.rM.RUnlock()
+	u, _ := h.getUserSafely(ci.UID)
 
-	r, ok := h.rooms[ci.RID]
-	if !ok {
-		h.users[ci.UID].SendError(fmt.Sprintf("Room %d is not exist!", ci.RID))
-		return
-	}
-
-	err := r.UserJoin(h.users[ci.UID], ci.Nickname)
-	if err != nil {
+	if err := h.joinRoom(u, ci); err != nil {
 		var s string
 		switch err {
 		case errRoomIsFull:
 			s = fmt.Sprintf("Room %d is full!", ci.RID)
 		case errUserAlreadyJoin:
 			s = fmt.Sprintf("You have joined Room %d!", ci.RID)
+		case errRoomNotFound:
+			s = fmt.Sprintf("Room %d is not exist!", ci.RID)
 		default:
 			logger.Errorln(err)
 			s = b.ErrServerError.Error()
 		}
-		h.users[ci.UID].SendError(s)
+		u.SendError(s)
 	}
+}
+
+// joinRoom ...
+func (h *Hall) joinRoom(u user.User, ci *m.ConnectInfo) error {
+	// filter wrong UID in receive message
+	h.rM.RLock()
+	defer h.rM.RUnlock()
+
+	r, ok := h.rooms[ci.RID]
+	if !ok {
+		return errRoomNotFound
+	}
+	return r.UserJoin(u, ci.Nickname)
+}
+
+// sendErrorToUser not check whether the user is exist in h.users map.
+func (h *Hall) getUserSafely(uid b.UserID) (user.User, error) {
+	h.uM.RLock()
+	defer h.uM.RUnlock()
+
+	u, ok := h.users[uid]
+	if !ok {
+		return nil, errUserNotFound
+	}
+
+	return u, nil
 }
 
 // HandleInfoPkg ...

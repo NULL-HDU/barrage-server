@@ -4,7 +4,6 @@ import (
 	"barrage-server/ball"
 	b "barrage-server/base"
 	m "barrage-server/message"
-	tball "barrage-server/testLib/ball"
 	tm "barrage-server/testLib/message"
 	"testing"
 )
@@ -41,18 +40,7 @@ func TestPlayground(t *testing.T) {
 	}
 
 	// PutPkg
-	collisionedBalls := tball.GenerateRandomIDBall(1, 20)
-	pi := &m.PlaygroundInfo{
-		Sender: 1,
-		NewBalls: &m.BallsInfo{
-			BallInfos: append(tball.GenerateRandomIDBall(1, 20), collisionedBalls[:10]...),
-		},
-		Displacements: &m.BallsInfo{
-			BallInfos: append(tball.GenerateRandomIDBall(1, 20), collisionedBalls[10:]...),
-		},
-		Collisions: tm.GenerateCollisionsInfoFromBalls(collisionedBalls[:5]),
-		Disappears: tm.GenerateDisappearsInfoFromBalls(collisionedBalls[5:]),
-	}
+	pi := tm.GenerateTestRandomPlaygroundInfo(1, 20, 20, 5, 15)
 
 	if err := pg.PutPkg(pi); err != nil {
 		t.Error(err)
@@ -83,17 +71,7 @@ func TestPlayground(t *testing.T) {
 	}
 
 	// PkgsForEachUser
-	pi2 := &m.PlaygroundInfo{
-		Sender: 2,
-		NewBalls: &m.BallsInfo{
-			BallInfos: append(tball.GenerateRandomIDBall(2, 20), collisionedBalls[:10]...),
-		},
-		Displacements: &m.BallsInfo{
-			BallInfos: append(tball.GenerateRandomIDBall(2, 20), collisionedBalls[10:]...),
-		},
-		Collisions: tm.GenerateCollisionsInfoFromBalls(collisionedBalls[:5]),
-		Disappears: tm.GenerateDisappearsInfoFromBalls(collisionedBalls[:]),
-	}
+	pi2 := tm.GenerateTestRandomPlaygroundInfo(2, 20, 20, 5, 0)
 	if err := pg.PutPkg(pi2); err != nil {
 		t.Error(err)
 	}
@@ -102,9 +80,22 @@ func TestPlayground(t *testing.T) {
 	if pisLen := len(pis); pisLen != 19 {
 		t.Errorf("Length of playgroundInfo is wrong, hope %d, get %d.", 19, pisLen)
 	}
+	if ubcLen := len(pg.userBytesCache[2][0].Buf); ubcLen != 0 {
+		t.Errorf("Length of BytesCache is wrong, hope %d, get %d.", 0, ubcLen)
+	}
+	if ubcLen := len(pg.userBytesCache[2][1].Buf); ubcLen != 0 {
+		t.Errorf("Length of BytesCache is wrong, hope %d, get %d.", 0, ubcLen)
+	}
+	if ubcLen := len(pg.userBytesCache[2][1].Buf); ubcLen != 0 {
+		t.Errorf("Length of BytesCache is wrong, hope %d, get %d.", 0, ubcLen)
+	}
+	if ucLen := len(pg.userCollision[2]); ucLen != 0 {
+		t.Errorf("Length of collisionCache is wrong, hope %d, get %d.", 0, ucLen)
+	}
+
 	pi = new(m.PlaygroundInfo)
 	piForUnmarshal := pis[3]
-	if piForUnmarshal.Reciever == 2 {
+	if piForUnmarshal.Receiver == 2 {
 		piForUnmarshal = pis[4]
 	}
 	if err := pi.UnmarshalBinary(piForUnmarshal.CacheBytes); err != nil {
@@ -119,8 +110,8 @@ func TestPlayground(t *testing.T) {
 	if LenDisplace := len(pi.Displacements.BallInfos); LenDisplace != 40 {
 		t.Errorf("Length of LenDisplace is wrong , hope %d, get %d.", 40, LenDisplace)
 	}
-	if LenCollision := len(pi.Collisions.CollisionInfos); LenCollision != 45 {
-		t.Errorf("Length of LenCollision is wrong , hope %d, get %d.", 45, LenCollision)
+	if LenCollision := len(pi.Collisions.CollisionInfos); LenCollision != 50 {
+		t.Errorf("Length of LenCollision is wrong , hope %d, get %d.", 50, LenCollision)
 	}
 
 }

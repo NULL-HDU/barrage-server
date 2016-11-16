@@ -12,7 +12,10 @@ import (
 
 var (
 	// errors
-	errInvalidUser = errors.New("Invalid user error.")
+	errInvalidUser    = errors.New("Invalid user error")
+	errNotAllowedMsg  = errors.New("Not allowed message")
+	errUserID         = errors.New("User ID error")
+	errInvalidMessage = errors.New("Invalid message error")
 )
 
 var logger = b.Log
@@ -73,7 +76,7 @@ func (u *user) Room() b.RoomID {
 	return u.rid
 }
 
-// UploadInfo ...
+// UploadInfo do base check and add it to infoChan.
 func (u *user) UploadInfo(ipkg m.InfoPkg) {
 	go func() {
 		u.roomM.RLock()
@@ -84,15 +87,64 @@ func (u *user) UploadInfo(ipkg m.InfoPkg) {
 			return
 		}
 
-		// add Sender to playground info
-		if ipkg.Type() == m.InfoPlayground {
-			pi := ipkg.(*m.PlaygroundInfo)
-			pi.Sender = u.uid
-			pi.Reciever = b.SysID
-		}
-
 		u.infoChan <- ipkg
 	}()
+}
+
+// convertBytesToInfopkg ...
+func (u *user) convertBytesToInfopkg(cache []byte) (ipkg m.InfoPkg, err error) {
+	defer func() {
+		if re := recover(); re != nil {
+			err = re.(error)
+		}
+	}()
+
+	msg, err := m.NewMessageFromBytes(cache)
+	if err != nil {
+		return nil, err
+	}
+
+	ipkg, err = m.NewInfoPkgFromMsg(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return ipkg, nil
+}
+
+// preOperationForIpkg is a guard fucntion to filter invalid infopkgs and do some
+// pre oreration.
+func (u *user) preOperationForIpkg(ipkg m.InfoPkg) error {
+	switch t := ipkg.Type(); t {
+	case m.InfoPlayground:
+		// add Sender to playground info
+		pi := ipkg.(*m.PlaygroundInfo)
+		pi.Sender = u.uid
+		pi.Receiver = b.SysID
+		return nil
+	case m.InfoConnect:
+		return u.checkConnectInfo(ipkg.Body().(*m.ConnectInfo))
+	case m.InfoDisconnect:
+		return u.checkDisconnectInfo(ipkg.Body().(*m.DisconnectInfo))
+	default:
+		return errNotAllowedMsg
+	}
+}
+
+// checkConnectInfo ...
+func (u *user) checkConnectInfo(ci *m.ConnectInfo) error {
+	if ci.UID != u.uid {
+		return errUserID
+	}
+	return nil
+}
+
+// checkDisconnectInfo ...
+func (u *user) checkDisconnectInfo(di *m.DisconnectInfo) error {
+	if di.UID != u.uid {
+		return errUserID
+	}
+	return nil
 }
 
 // SendError ...
@@ -141,34 +193,37 @@ func (u *user) sendSync(ipkg m.InfoPkg) error {
 }
 
 // play ...
-func (u *user) recieveAndUploadMessage() {
+func (u *user) receiveAndUploadMessage() {
 	var cache []byte
 	for {
+		// receive bytes
 		if err := ws.Message.Receive(u.wc, &cache); err != nil {
 			if err == io.EOF {
 				break
 			}
 			u.sendError(b.ErrServerError.Error())
 			logger.Errorf("Error: %s \n", err)
+			continue
 		}
 
-		msg, err := m.NewMessageFromBytes(cache)
+		// convert bytes to infopkg
+		ipkg, err := u.convertBytesToInfopkg(cache)
 		if err != nil {
-			u.sendError("Invalid Message.")
-			logger.Errorf("User %d Error: %s \n", u.uid, err)
-		}
-
-		ipkg, err := m.NewInfoPkgFromMsg(msg)
-		if err != nil {
-			// ignore empty info.
-			if err == m.ErrEmptyInfo {
-				continue
-			} else {
-				u.sendError("Invalid Message.")
-				logger.Errorf("User %d Error: %s \n", u.uid, err)
+			if err != m.ErrEmptyInfo {
+				u.sendError(errInvalidMessage.Error())
+				logger.Infof("Client Message Error: %v.\n", err)
 			}
+			continue
 		}
 
+		// pre operation for infopkg
+		if err := u.preOperationForIpkg(ipkg); err != nil {
+			u.sendError(err.Error())
+			logger.Infof("Client Message Error: %v.\n", err)
+			continue
+		}
+
+		// upload infopkg
 		u.UploadInfo(ipkg)
 	}
 }
@@ -179,6 +234,6 @@ func (u *user) Play() error {
 		return errInvalidUser
 	}
 
-	u.recieveAndUploadMessage()
+	u.receiveAndUploadMessage()
 	return nil
 }

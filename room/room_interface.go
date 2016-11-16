@@ -24,6 +24,8 @@ const (
 var (
 	// errors
 
+	errRoomNotFound    = errors.New("Room is not Found.")
+	errUserNotFound    = errors.New("User is not Found.")
 	errRoomIsFull      = errors.New("Room is full.")
 	errUserAlreadyJoin = errors.New("User already join.")
 )

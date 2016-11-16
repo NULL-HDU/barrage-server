@@ -4,6 +4,7 @@ import (
 	"barrage-server/ball"
 	b "barrage-server/base"
 	m "barrage-server/message"
+	tball "barrage-server/testLib/ball"
 	"math/rand"
 )
 
@@ -124,5 +125,20 @@ func GenerateDisappearsInfoFromBalls(balls []ball.Ball) *m.DisappearsInfo {
 
 	return &m.DisappearsInfo{
 		IDs: dsi,
+	}
+}
+
+func GenerateTestRandomPlaygroundInfo(sender b.UserID, niNum, diNum, ciNum, dsiNum int) *m.PlaygroundInfo {
+	collisionedBalls := tball.GenerateRandomIDBall(sender, ciNum+dsiNum)
+	return &m.PlaygroundInfo{
+		Sender: sender,
+		NewBalls: &m.BallsInfo{
+			BallInfos: append(tball.GenerateRandomIDBall(sender, niNum), collisionedBalls[:ciNum/2]...),
+		},
+		Displacements: &m.BallsInfo{
+			BallInfos: append(tball.GenerateRandomIDBall(sender, diNum), collisionedBalls[ciNum/2:]...),
+		},
+		Collisions: GenerateCollisionsInfoFromBalls(collisionedBalls[:ciNum]),
+		Disappears: GenerateDisappearsInfoFromBalls(collisionedBalls[ciNum:]),
 	}
 }

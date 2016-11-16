@@ -156,7 +156,7 @@ func (pg *playground) preCompileForEachUser() {
 // the playgroundInfo, but other attributes of playgroundInfo is empty. So this playgroundInfo should
 // be only used for send to user without other operating.
 func (pg *playground) fillPlaygroundInfo(uid b.UserID, pi *m.PlaygroundInfo) {
-	pi.Reciever = uid
+	pi.Receiver = uid
 	bufferCache := &pg.userBytesCache[uid][bufferIndex]
 
 	// append newBallsInfo

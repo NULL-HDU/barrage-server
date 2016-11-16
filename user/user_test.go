@@ -11,17 +11,17 @@ import (
 )
 
 // This example demonstrates a trivial echo server.
-func createTestWebsocket(testFunc func(ws *websocket.Conn)) {
-	http.Handle("/test", websocket.Handler(testFunc))
-	err := http.ListenAndServe("localhost:2333", nil)
+func createTestWebsocket(path string, testFunc func(ws *websocket.Conn)) {
+	http.Handle("/"+path, websocket.Handler(testFunc))
+	err := http.ListenAndServe("localhost:"+path, nil)
 	if err != nil {
 		logger.Panicln("ListenAndServe: " + err.Error())
 	}
 }
 
-func testWebsocketClient(testFunc func(ws *websocket.Conn)) {
+func testWebsocketClient(path string, testFunc func(ws *websocket.Conn)) {
 	origin := "http://localhost/"
-	url := "ws://localhost:2333/test"
+	url := "ws://localhost:" + path + "/" + path
 	ws, err := websocket.Dial(url, "", origin)
 	if err != nil {
 		logger.Fatalln(err)
@@ -50,6 +50,114 @@ func TestUserBindRoomAndUpload(t *testing.T) {
 	case <-time.After(time.Millisecond * 100):
 		t.Error("Conn't get infopkg from testchan.")
 	}
+}
+
+// TestUserGuardMethods ...
+func TestUserGuardMethods(t *testing.T) {
+	var w sync.WaitGroup
+	w.Add(2)
+
+	serverCheckFunc := func(wc *websocket.Conn) {
+		testchan := make(chan m.InfoPkg)
+		u := &user{
+			uid: 20,
+			wc:  wc,
+		}
+		u.BindRoom(20, testchan)
+
+		// test Play
+		go func() {
+			u.Play()
+		}()
+
+		time.Sleep(time.Second)
+
+	HOPEDISCONNECT:
+		for {
+			select {
+			case ipkg := <-testchan:
+				if itype := ipkg.Type(); itype != m.InfoDisconnect {
+					t.Errorf("Receive Error info! hope %d, but get %d.", m.InfoDisconnect, itype)
+				}
+				break HOPEDISCONNECT
+			case <-time.After(time.Millisecond * 100):
+			}
+		}
+
+		w.Done()
+	}
+
+	clientCheckFunc := func(wc *websocket.Conn) {
+		var bs []byte
+		count := 3
+
+		invalidDi := &m.DisconnectInfo{RID: 1, UID: 10}
+		msg, _ := m.NewMessageFromInfoPkg(invalidDi)
+		bs, _ = msg.MarshalBinary()
+		wc.Write(bs)
+
+		invalidCi := &m.ConnectInfo{RID: 1, UID: 13}
+		msg, _ = m.NewMessageFromInfoPkg(invalidCi)
+		bs, _ = msg.MarshalBinary()
+		wc.Write(bs)
+
+		invalidBytes, _ := tm.GenerateTestRandomPlaygroundInfo(20, 10, 10, 10, 10).MarshalBinary()
+		invalidBytes[2] = 1
+		msg = m.NewMessage(m.MsgPlayground, invalidBytes)
+		bs, _ = msg.MarshalBinary()
+		wc.Write(bs)
+
+		for {
+			if count <= 0 {
+				break
+			}
+
+			if err := websocket.Message.Receive(wc, &bs); err != nil {
+				logger.Errorln(err)
+			}
+			count--
+
+			msg, err := m.NewMessageFromBytes(bs)
+			if err != nil {
+				t.Error(err)
+			}
+
+			switch count {
+			case 2:
+				fallthrough
+			case 1:
+				if body, right := string(msg.Body()[1:]), errUserID.Error(); body != right {
+					t.Errorf("Wrong error message from server, hope '%s', get '%s'.", right, body)
+				}
+			case 0:
+				if body, right := string(msg.Body()[1:]), errInvalidMessage.Error(); body != right {
+					t.Errorf("Wrong error message from server, hope '%s', get '%s'.", right, body)
+				}
+
+			}
+		}
+
+		di := &m.DisconnectInfo{RID: 1, UID: 20}
+		bs, _ = di.MarshalBinary()
+		msg = m.NewMessage(m.MsgDisconnect, bs)
+		bs, _ = msg.MarshalBinary()
+		wc.Write(bs)
+		wc.WriteClose(0)
+
+		w.Done()
+	}
+
+	go func() {
+		createTestWebsocket("2333", serverCheckFunc)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	go func() {
+		testWebsocketClient("2333", clientCheckFunc)
+	}()
+
+	w.Wait()
 }
 
 // TestUserSendAndSendError ...
@@ -81,7 +189,7 @@ func TestUserSendAndSendErrorAndPlay(t *testing.T) {
 		select {
 		case ipkg := <-testchan:
 			if itype := ipkg.Type(); itype != m.InfoDisconnect {
-				t.Errorf("Recieve Error info! hope %d, but get %d.", m.InfoDisconnect, itype)
+				t.Errorf("Receive Error info! hope %d, but get %d.", m.InfoDisconnect, itype)
 			}
 		case <-time.After(time.Millisecond * 100):
 			t.Error("Conn't get infopkg from testchan.")
@@ -140,13 +248,13 @@ func TestUserSendAndSendErrorAndPlay(t *testing.T) {
 	}
 
 	go func() {
-		createTestWebsocket(serverCheckFunc)
+		createTestWebsocket("2222", serverCheckFunc)
 	}()
 
 	time.Sleep(100 * time.Millisecond)
 
 	go func() {
-		testWebsocketClient(clientCheckFunc)
+		testWebsocketClient("2222", clientCheckFunc)
 	}()
 
 	w.Wait()

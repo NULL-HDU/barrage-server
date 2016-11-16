@@ -75,7 +75,7 @@ type playground struct {
 	userCollision map[b.UserID][]*m.CollisionInfo
 	userBallCache map[b.UserID]ballCache
 
-	// not sync secrity. only be used by fillPlaygroundInfo.
+	// not concurrent secrity. only be used by fillPlaygroundInfo.
 	userBytesCache map[b.UserID][]bytesCache
 }
 

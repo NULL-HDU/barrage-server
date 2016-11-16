@@ -34,7 +34,7 @@ type User interface {
 	SendError(s string)
 
 	//UploadInfo send infopkg to room via chan<- m.InfoPkg
-	UploadInfo(infopkg m.InfoPkg)
+	UploadInfo(infopkg m.InfoPkg) error
 
 	//BindRoom set infopkg channel and room id for user to binds room and user.
 	BindRoom(id b.RoomID, c chan<- m.InfoPkg)
@@ -77,18 +77,19 @@ func (u *user) Room() b.RoomID {
 }
 
 // UploadInfo do base check and add it to infoChan.
-func (u *user) UploadInfo(ipkg m.InfoPkg) {
+func (u *user) UploadInfo(ipkg m.InfoPkg) error {
+	u.roomM.RLock()
+	defer u.roomM.RUnlock()
+
+	if u.infoChan == nil {
+		return errInvalidUser
+	}
+
 	go func() {
-		u.roomM.RLock()
-		defer u.roomM.RUnlock()
-
-		if u.infoChan == nil {
-			logger.Errorln(errInvalidUser)
-			return
-		}
-
 		u.infoChan <- ipkg
 	}()
+
+	return nil
 }
 
 // convertBytesToInfopkg ...
@@ -202,7 +203,7 @@ func (u *user) receiveAndUploadMessage() {
 				break
 			}
 			u.sendError(b.ErrServerError.Error())
-			logger.Errorf("Error: %s \n", err)
+			logger.Errorln("Websocket Message Receive Error: %s \n", err)
 			continue
 		}
 
@@ -224,7 +225,11 @@ func (u *user) receiveAndUploadMessage() {
 		}
 
 		// upload infopkg
-		u.UploadInfo(ipkg)
+		if err := u.UploadInfo(ipkg); err != nil {
+			u.sendError(b.ErrServerError.Error())
+			logger.Errorf("InfoChan of the user %d is nil.", u.ID())
+			break
+		}
 	}
 }
 

@@ -6,7 +6,6 @@ import (
 	m "barrage-server/message"
 	pg "barrage-server/playground"
 	"barrage-server/user"
-	"fmt"
 	"sync"
 )
 
@@ -116,28 +115,34 @@ func (r *Room) userJoin(u user.User) error {
 
 // UserLeft ...
 func (r *Room) UserLeft(userID b.UserID) error {
+
+	if err := r.userLeft(userID); err != nil {
+		return err
+	}
+
+	logger.Infof("User %d left room %d. \n", userID, r.id)
+	return nil
+}
+
+// userLeft ...
+func (r *Room) userLeft(userID b.UserID) error {
 	r.mapM.Lock()
 	defer r.mapM.Unlock()
 
 	u, ok := r.users[userID]
 	if !ok {
-		return fmt.Errorf("User Left Error: Not found user %d.", userID)
+		return errUserNotFound
 	}
 
 	JoinHall(u)
 	r.playground.DeleteUser(userID)
 	delete(r.users, userID)
 
-	logger.Infof("User %d left room %d. \n", userID, r.id)
-
 	return nil
 }
 
 // handlePlayground add playgroundInfo data into the cache of pi.Sender in room
 func (r *Room) handlePlayground(pi *m.PlaygroundInfo) {
-	r.mapM.Lock()
-	defer r.mapM.Unlock()
-
 	if err := r.playground.PutPkg(pi); err != nil {
 		if err == pg.ErrNotFoundUser {
 			logger.Errorf("Not find user %d in room cache map %d. \n", pi.Sender, r.id)
@@ -163,10 +168,10 @@ func (r *Room) handleDisconnect(dsi *m.DisconnectInfo) {
 
 // playgroundBoardCast ...
 func (r *Room) playgroundBoardCast() {
+	pis := r.playground.PkgsForEachUser()
+
 	r.mapM.Lock()
 	defer r.mapM.Unlock()
-
-	pis := r.playground.PkgsForEachUser()
 
 	for _, pi := range pis {
 		u, ok := r.users[pi.Receiver]

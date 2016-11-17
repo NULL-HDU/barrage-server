@@ -35,6 +35,7 @@ var commonHall *Hall
 
 func init() {
 	commonHall = NewHall()
+	commonHall.rooms[b.DefaultRoomID] = NewRoom(b.DefaultRoomID)
 	Open(commonHall, time.Minute)
 	Open(commonHall.rooms[b.DefaultRoomID], b.DefaultRoomBoardCastDuration)
 }

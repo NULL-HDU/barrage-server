@@ -130,7 +130,7 @@ func TestUserGuardMethods(t *testing.T) {
 					t.Errorf("Wrong error message from server, hope '%s', get '%s'.", right, body)
 				}
 			case 0:
-				if body, right := string(msg.Body()[1:]), errInvalidMessage.Error(); body != right {
+				if body, right := string(msg.Body()[1:]), m.ErrInvalidMessage.Error(); body != right {
 					t.Errorf("Wrong error message from server, hope '%s', get '%s'.", right, body)
 				}
 

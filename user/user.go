@@ -12,10 +12,9 @@ import (
 
 var (
 	// errors
-	errInvalidUser    = errors.New("Invalid user error")
-	errNotAllowedMsg  = errors.New("Not allowed message")
-	errUserID         = errors.New("User ID error")
-	errInvalidMessage = errors.New("Invalid message error")
+	errInvalidUser   = errors.New("Invalid user error")
+	errNotAllowedMsg = errors.New("Not allowed message")
+	errUserID        = errors.New("User ID error")
 )
 
 var logger = b.Log
@@ -211,7 +210,7 @@ func (u *user) receiveAndUploadMessage() {
 		ipkg, err := u.convertBytesToInfopkg(cache)
 		if err != nil {
 			if err != m.ErrEmptyInfo {
-				u.sendError(errInvalidMessage.Error())
+				u.sendError(m.ErrInvalidMessage.Error())
 				logger.Infof("Client Message Error: %v.\n", err)
 			}
 			continue

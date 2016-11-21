@@ -4,6 +4,9 @@ import (
 	"time"
 )
 
+// RunningEnv is the current running environment
+var RunningEnv = Development
+
 // RoomMembersLimit limit member in every room.
 var RoomMembersLimit = 8
 

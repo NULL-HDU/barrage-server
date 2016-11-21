@@ -5,6 +5,7 @@ import (
 	tm "barrage-server/testLib/message"
 	"golang.org/x/net/websocket"
 	"net/http"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -126,14 +127,13 @@ func TestUserGuardMethods(t *testing.T) {
 			case 2:
 				fallthrough
 			case 1:
-				if body, right := string(msg.Body()[1:]), errUserID.Error(); body != right {
-					t.Errorf("Wrong error message from server, hope '%s', get '%s'.", right, body)
+				if body, right := string(msg.Body()[1:]), errUserID.Error(); !strings.Contains(body, right) {
+					t.Errorf("Wrong error message from server, hope contains '%s', get '%s'.", right, body)
 				}
 			case 0:
-				if body, right := string(msg.Body()[1:]), m.ErrInvalidMessage.Error(); body != right {
-					t.Errorf("Wrong error message from server, hope '%s', get '%s'.", right, body)
+				if body, right := string(msg.Body()[1:]), m.ErrInvalidMessage.Error(); !strings.Contains(body, right) {
+					t.Errorf("Wrong error message from server, hope contains '%s', get '%s'.", right, body)
 				}
-
 			}
 		}
 
@@ -194,6 +194,8 @@ func TestUserSendAndSendErrorAndPlay(t *testing.T) {
 		case <-time.After(time.Millisecond * 100):
 			t.Error("Conn't get infopkg from testchan.")
 		}
+
+		time.Sleep(time.Millisecond * 200)
 
 		w.Done()
 	}

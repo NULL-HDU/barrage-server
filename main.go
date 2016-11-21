@@ -1,10 +1,17 @@
 package main
 
 import (
+	b "barrage-server/base"
 	"barrage-server/socket"
 )
 
 func main() {
 
-	socket.ListenAndServer("2334", "/ws")
+	path := "/test"
+
+	if b.RunningEnv == b.Production {
+		path = "/ws"
+	}
+
+	socket.ListenAndServer("2334", path)
 }

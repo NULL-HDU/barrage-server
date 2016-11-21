@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sync"
 
+	"fmt"
 	ws "golang.org/x/net/websocket"
 	"io"
 )
@@ -18,6 +19,20 @@ var (
 )
 
 var logger = b.Log
+
+// constructErrorStringForMsg construct error string after receiving and unmarshaling message
+// according to message type and running environment.
+func constructErrorStringForMsg(msg m.Message, err string) string {
+	if b.RunningEnv == b.Production {
+		return err
+	}
+
+	if msg == nil {
+		return err + ". Failed to unmarshal message."
+	}
+
+	return fmt.Sprintf("%s. Type of received message is %d.", err, msg.Type())
+}
 
 //User analyse the bytes from frontend and upload the result to Room.
 //
@@ -92,24 +107,24 @@ func (u *user) UploadInfo(ipkg m.InfoPkg) error {
 }
 
 // convertBytesToInfopkg ...
-func (u *user) convertBytesToInfopkg(cache []byte) (ipkg m.InfoPkg, err error) {
+func (u *user) convertBytesToInfopkg(cache []byte) (ipkg m.InfoPkg, msg m.Message, err error) {
 	defer func() {
 		if re := recover(); re != nil {
 			err = re.(error)
 		}
 	}()
 
-	msg, err := m.NewMessageFromBytes(cache)
+	msg, err = m.NewMessageFromBytes(cache)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ipkg, err = m.NewInfoPkgFromMsg(msg)
 	if err != nil {
-		return nil, err
+		return nil, msg, err
 	}
 
-	return ipkg, nil
+	return ipkg, msg, nil
 }
 
 // preOperationForIpkg is a guard fucntion to filter invalid infopkgs and do some
@@ -202,15 +217,16 @@ func (u *user) receiveAndUploadMessage() {
 				break
 			}
 			u.sendError(b.ErrServerError.Error())
-			logger.Errorln("Websocket Message Receive Error: %s \n", err)
+			logger.Errorf("Websocket Message Receive Error: %s \n", err)
 			continue
 		}
 
 		// convert bytes to infopkg
-		ipkg, err := u.convertBytesToInfopkg(cache)
+		ipkg, msg, err := u.convertBytesToInfopkg(cache)
 		if err != nil {
 			if err != m.ErrEmptyInfo {
-				u.sendError(m.ErrInvalidMessage.Error())
+				u.sendError(
+					constructErrorStringForMsg(msg, m.ErrInvalidMessage.Error()))
 				logger.Infof("Client Message Error: %v.\n", err)
 			}
 			continue
@@ -218,7 +234,7 @@ func (u *user) receiveAndUploadMessage() {
 
 		// pre operation for infopkg
 		if err := u.preOperationForIpkg(ipkg); err != nil {
-			u.sendError(err.Error())
+			u.sendError(constructErrorStringForMsg(msg, err.Error()))
 			logger.Infof("Client Message Error: %v.\n", err)
 			continue
 		}

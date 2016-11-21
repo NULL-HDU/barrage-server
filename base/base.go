@@ -42,6 +42,17 @@ const (
 	SysID = 0
 )
 
+const (
+	// environment
+
+	// Development environment
+	Development = iota
+	// Testing environment
+	Testing
+	// Production environment
+	Production
+)
+
 // init
 func init() {
 	Log = log.NewStdLogger(log.InfoLevel)

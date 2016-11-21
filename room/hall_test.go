@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+func init() {
+	OpenGameHallAndRooms(b.OpenRoomIDs)
+}
+
 // TestHallUserJoinAndLeft ...
 func TestHallUserJoinAndLeftAndID(t *testing.T) {
 	r := NewHall()

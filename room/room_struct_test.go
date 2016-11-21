@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+func init() {
+	OpenGameHallAndRooms(b.OpenRoomIDs)
+}
+
 type testInfo struct {
 	v1 byte
 	v2 int

@@ -33,11 +33,15 @@ var (
 // CommonHall is the default entity of hall for all users.
 var commonHall *Hall
 
-func init() {
+// OpenGameHallAndRooms init game hall and rooms, then open them.
+func OpenGameHallAndRooms(rids []b.RoomID) {
 	commonHall = NewHall()
-	commonHall.rooms[b.DefaultRoomID] = NewRoom(b.DefaultRoomID)
 	Open(commonHall, time.Minute)
-	Open(commonHall.rooms[b.DefaultRoomID], b.DefaultRoomBoardCastDuration)
+
+	for _, rid := range rids {
+		commonHall.rooms[rid] = NewRoom(rid)
+		Open(commonHall.rooms[rid], b.RoomBoardCastDuration)
+	}
 }
 
 // JoinHall join a user into common hall.

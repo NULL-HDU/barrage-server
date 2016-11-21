@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+func init() {
+	OpenGameHallAndRooms(b.OpenRoomIDs)
+}
+
 type testTiggler struct {
 	id       b.RoomID
 	status   uint8

@@ -16,8 +16,8 @@ var PlayGroundHeight = 3000
 // PlayGroundWidth width of virtual playground
 var PlayGroundWidth = 2100
 
-// DefaultRoomID is the id of default room
-var DefaultRoomID RoomID = 1
+// OpenRoomIDs is the id of opened rooms
+var OpenRoomIDs = []RoomID{1}
 
-// DefaultRoomBoardCastDuration the duration between two boardcast of the room
-var DefaultRoomBoardCastDuration = time.Millisecond * 10
+// RoomBoardCastDuration the duration between two boardcast of the room
+var RoomBoardCastDuration = time.Millisecond * 10

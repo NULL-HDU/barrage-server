@@ -46,7 +46,7 @@ const (
 )
 
 const (
-	ballBaseSize = 28
+	ballBaseSize = 27
 )
 
 type hp uint8

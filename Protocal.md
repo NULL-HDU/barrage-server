@@ -26,7 +26,10 @@
 * userId: Uint32, the id of the creator of this ball
 * id: Uint16, it is a value from 1 - 2*32. After user creating a ball, it add to one. 0 is user's airplane
 
-**ball**: `camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint8) + damage(damage) + role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(uint16) + alive(bool) + isKilled(bool) + locationCurrent(location)`
+**ball**: `camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint8) + damage(damage) + role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(uint16) + status(uint8) + isKilled(bool) + locationCurrent(location)`
+
+ballType: uint8, type of ball[^footnote1]
+status: uint8, status of the ball[^footnote2]
 
 **nickname**: `lengthOfName(Uint8) + name(lengthOfNickname * Uint8)`
 
@@ -37,7 +40,7 @@
 
 **collisionViewInfo**: `ballA(ballId) + ballB(ballId) + damageToA(damage) + damageToB(damage)`
 
-**collisionSocketInfo**: `collisionViewInfo(collisionViewInfo) + AIsAlive(bool) + BIsAlive(bool) + AWillDisappear(bool) + BWillDisappear(bool)`
+**collisionSocketInfo**: `collisionViewInfo(collisionViewInfo) + AState(uint8) + BState(uint8)`
 
 **collisionSocketInfos**: `lengthOfCollisionSocketInfos(Uint32) + collisionSocketInfoArray(lengthOfCollisionSocketInfos * collisionSocketInfo)`
 
@@ -194,3 +197,7 @@ message body: `OverType(Uint8)`
 type value: 212  (0xd4)
 
 message body: `userId(userId)`
+
+
+[^footnote1]:     airPlane = 0, block = 1, bullet = 2, food = 3
+[^footnote2]:     Alive = 0, Dead = 1, Disappear = 2

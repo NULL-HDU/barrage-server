@@ -277,7 +277,7 @@ func main() {
 		"clean all packages",
 		cleanInfoPkgListFunc)
 
-	connToServer(2334, "/ws")
+	connToServer(2334, "/test")
 	for {
 		if err := cmdface.InputAndRunCommand(">>> "); err != nil {
 			cmdface.Show(fmt.Sprintf("%s\n", err.Error()))

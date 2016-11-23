@@ -4,12 +4,10 @@ import (
 	"barrage-server/ball"
 	b "barrage-server/base"
 	"barrage-server/libs/bufbo"
-	"bytes"
-	"fmt"
 )
 
 const (
-	collisionInfoSize = 18
+	collisionInfoSize = 16
 	disappearInfoSize = 2
 )
 
@@ -101,8 +99,8 @@ func (ci *CollisionInfo) Size() int {
 
 // MarshalBinary ...
 func (ci *CollisionInfo) MarshalBinary() ([]byte, error) {
-	var buffer bytes.Buffer
-	bw := bufbo.NewBEBufWriter(&buffer)
+	var bs = make([]byte, ci.Size())
+	bw := bufbo.NewBEBytesWriter(bs)
 
 	// full ball id
 	bw.PutUint32(uint32(ci.IDs[0].UID))
@@ -115,25 +113,11 @@ func (ci *CollisionInfo) MarshalBinary() ([]byte, error) {
 	bw.PutUint8(uint8(ci.Damages[1]))
 
 	// state
-	isAlive, isKilled, err := ball.AnalyseStateToBytes(ci.States[0])
-	if err != nil {
-		return nil, fmt.Errorf(
-			"%v the state is %d, while marshaling CollisionInfo-A(%v & %v).\n",
-			err, ci.States[0], ci.IDs[0], ci.IDs[1])
-	}
-	bw.PutUint8(isAlive)
-	bw.PutUint8(isKilled)
-	isAlive, isKilled, err = ball.AnalyseStateToBytes(ci.States[1])
-	if err != nil {
-		return nil, fmt.Errorf(
-			"%v the state is %d, while marshaling CollisionInfo-B(%v & %v).\n",
-			err, ci.States[1], ci.IDs[0], ci.IDs[1])
-	}
-	bw.PutUint8(isAlive)
-	bw.PutUint8(isKilled)
-	// 28 bytes
+	bw.PutUint8(uint8(ci.States[0]))
+	bw.PutUint8(uint8(ci.States[1]))
+	// 16 bytes
 
-	return buffer.Bytes(), nil
+	return bs, nil
 }
 
 // UnmarshalBinary ...
@@ -151,23 +135,8 @@ func (ci *CollisionInfo) UnmarshalBinary(data []byte) error {
 	ci.Damages[0] = b.Damage(br.Uint8())
 	ci.Damages[1] = b.Damage(br.Uint8())
 
-	isAlive, isKilled := br.Uint8(), br.Uint8()
-	state, err := ball.AnalyseBytesToState(isAlive, isKilled)
-	if err != nil {
-		return fmt.Errorf(
-			"%v source bytes is isAlive: %d, isKilled: %d, while unmarshaling CollisionInfo-A(%v %v).\n",
-			err, isAlive, isKilled, ci.IDs[0], ci.IDs[1])
-	}
-	ci.States[0] = state
-
-	isAlive, isKilled = br.Uint8(), br.Uint8()
-	state, err = ball.AnalyseBytesToState(isAlive, isKilled)
-	if err != nil {
-		return fmt.Errorf(
-			"%v source bytes is isAlive: %d, isKilled: %d, while unmarshaling CollisionInfo-B(%v %v).\n",
-			err, isAlive, isKilled, ci.IDs[0], ci.IDs[1])
-	}
-	ci.States[1] = state
+	ci.States[0] = ball.State(br.Uint8())
+	ci.States[1] = ball.State(br.Uint8())
 
 	return nil
 }

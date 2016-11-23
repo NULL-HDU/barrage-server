@@ -4,7 +4,6 @@ package ball
 import (
 	b "barrage-server/base"
 	"barrage-server/libs/bufbo"
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -23,7 +22,7 @@ type State uint8
 const (
 	// Alive  ball alive
 	// isAlive: true, willDisappear: false
-	Alive = State(iota + 1)
+	Alive = State(iota)
 	// Dead  ball dead
 	// isAlive: false, willDisappear: false
 	Dead
@@ -47,7 +46,7 @@ const (
 )
 
 const (
-	ballBaseSize = 26
+	ballBaseSize = 25
 )
 
 type hp uint8
@@ -192,8 +191,8 @@ func (bl *ball) Size() int {
 }
 
 func (bl *ball) MarshalBinary() ([]byte, error) {
-	var buffer bytes.Buffer
-	bw := bufbo.NewBEBufWriter(&buffer)
+	bs := make([]byte, bl.Size())
+	bw := bufbo.NewBEBytesWriter(bs)
 
 	//uid(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint16) + damage(damage)+
 	//role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(Uint16) + alive(bool) +
@@ -215,20 +214,12 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 	bw.PutUint16(uint16(bl.special))
 	bw.PutUint8(uint8(bl.speed))
 	bw.PutUint16(uint16(bl.attackDir))
-
-	isAlive, isKilled, err := AnalyseStateToBytes(bl.state)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"%v the state is %d, while marshaling ball(%d %d).\n",
-			err, bl.state, bl.uid, bl.id)
-	}
-	bw.PutUint8(isAlive)
-	bw.PutUint8(isKilled)
+	bw.PutUint8(uint8(bl.state))
 	bw.PutUint16(bl.location.x)
 	bw.PutUint16(bl.location.y)
 	// 34 + bytes
 
-	return buffer.Bytes(), nil
+	return bs, nil
 }
 
 func (bl *ball) UnmarshalBinary(data []byte) error {
@@ -245,45 +236,9 @@ func (bl *ball) UnmarshalBinary(data []byte) error {
 	bl.special = special(br.Uint16())
 	bl.speed = speed(br.Uint8())
 	bl.attackDir = attackDir(br.Uint16())
-
-	isAlive, isKilled := br.Uint8(), br.Uint8()
-	state, err := AnalyseBytesToState(isAlive, isKilled)
-	if err != nil {
-		return fmt.Errorf(
-			"%v source bytes is isAlive: %d, isKilled: %d, while unmarshaling ball(%d %d).\n",
-			err, isAlive, isKilled, bl.uid, bl.id)
-	}
-	bl.state = state
+	bl.state = State(br.Uint8())
 	bl.location.x = br.Uint16()
 	bl.location.y = br.Uint16()
 
 	return nil
-}
-
-// AnalyseStateToBytes analyse state to isKilled and isAlive.
-func AnalyseStateToBytes(s State) (uint8, uint8, error) {
-	switch s {
-	case Alive:
-		return 1, 0, nil
-	case Dead:
-		return 0, 1, nil
-	case Disappear:
-		return 0, 0, nil
-	default:
-		return 0, 0, errInvalidState
-	}
-}
-
-// AnalyseBytesToState analyse isKilled and isAlive to state
-func AnalyseBytesToState(a, k uint8) (State, error) {
-	switch {
-	case a == 1 && k == 0:
-		return Alive, nil
-	case a == 0 && k == 1:
-		return Dead, nil
-	case a == 0 && k == 0:
-		return Disappear, nil
-	default:
-		return 0, errInvalidState
-	}
 }

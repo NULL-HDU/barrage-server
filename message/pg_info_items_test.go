@@ -50,12 +50,8 @@ func generateCollisionInfoBytes() []byte {
 	bw.PutUint8(uint8(damageB))
 
 	// state
-	isAlive, isKilled, _ := ball.AnalyseStateToBytes(stateA)
-	bw.PutUint8(isAlive)
-	bw.PutUint8(isKilled)
-	isAlive, isKilled, _ = ball.AnalyseStateToBytes(stateB)
-	bw.PutUint8(isAlive)
-	bw.PutUint8(isKilled)
+	bw.PutUint8(uint8(stateA))
+	bw.PutUint8(uint8(stateB))
 
 	return bs
 }

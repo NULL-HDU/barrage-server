@@ -1,7 +1,9 @@
 package socket
 
 import (
+	b "barrage-server/base"
 	m "barrage-server/message"
+	r "barrage-server/room"
 	"encoding/binary"
 	"golang.org/x/net/websocket"
 	"sync"
@@ -25,6 +27,7 @@ func TestWebsocketConnect(t *testing.T) {
 	w.Add(2)
 
 	go func() {
+		r.OpenGameHallAndRooms(b.OpenRoomIDs)
 		w.Done()
 		ListenAndServer("2333", "/test")
 	}()

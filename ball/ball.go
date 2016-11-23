@@ -46,7 +46,7 @@ const (
 )
 
 const (
-	ballBaseSize = 25
+	ballBaseSize = 28
 )
 
 type hp uint8
@@ -57,7 +57,7 @@ type special uint16
 
 type speed uint8
 
-type attackDir uint16
+type attackDir float32
 
 type location struct {
 	x uint16
@@ -213,7 +213,7 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 	bw.PutUint8(uint8(bl.role))
 	bw.PutUint16(uint16(bl.special))
 	bw.PutUint8(uint8(bl.speed))
-	bw.PutUint16(uint16(bl.attackDir))
+	bw.PutFloat32(float32(bl.attackDir))
 	bw.PutUint8(uint8(bl.state))
 	bw.PutUint16(bl.location.x)
 	bw.PutUint16(bl.location.y)
@@ -235,7 +235,7 @@ func (bl *ball) UnmarshalBinary(data []byte) error {
 	bl.role = role(br.Uint8())
 	bl.special = special(br.Uint16())
 	bl.speed = speed(br.Uint8())
-	bl.attackDir = attackDir(br.Uint16())
+	bl.attackDir = attackDir(br.Float32())
 	bl.state = State(br.Uint8())
 	bl.location.x = br.Uint16()
 	bl.location.y = br.Uint16()

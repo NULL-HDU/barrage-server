@@ -167,8 +167,8 @@ func TestAirplaneCreatedInfo(t *testing.T) {
 		t.Error(err)
 	}
 
-	if aci.Size() != 31 {
-		t.Errorf("Size of Marshaled bytes should be 32, but get %d.", aci.Size())
+	if aci.Size() != 34 {
+		t.Errorf("Size of Marshaled bytes should be 34, but get %d.", aci.Size())
 	}
 	if l1, l2 := len(bs), aci.Size(); l1 != l2 {
 		t.Errorf("Result of Marshaled bytes is not correct, hope %d, get %d.", l2, l1)

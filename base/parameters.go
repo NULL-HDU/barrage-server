@@ -11,10 +11,10 @@ var RunningEnv = Development
 var RoomMembersLimit = 8
 
 // PlayGroundHeight height of virtual playground
-var PlayGroundHeight = 3000
+var PlayGroundHeight = 2100
 
 // PlayGroundWidth width of virtual playground
-var PlayGroundWidth = 2100
+var PlayGroundWidth = 3000
 
 // OpenRoomIDs is the id of opened rooms
 var OpenRoomIDs = []RoomID{1}

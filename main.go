@@ -37,6 +37,8 @@ func main() {
 	r.OpenGameHallAndRooms(b.OpenRoomIDs)
 
 	path := "/test"
+	b.PlayGroundHeight = 200
+	b.PlayGroundWidth = 240
 	if b.RunningEnv == b.Production {
 		path = "/ws"
 	}

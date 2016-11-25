@@ -125,7 +125,7 @@ func (h *Hall) joinRoom(u user.User, ci *m.ConnectInfo) error {
 	if !ok {
 		return errRoomNotFound
 	}
-	return r.UserJoin(u, ci.Nickname)
+	return r.UserJoin(u)
 }
 
 // sendErrorToUser not check whether the user is exist in h.users map.

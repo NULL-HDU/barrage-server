@@ -113,8 +113,8 @@ FLOWOVER:
 		}
 
 		switch flowStep {
-		case 1: //(c→ s)[connect] → (s→ c)[Airplane create]
-			err = checkConnectMsgAndSendAirplaneMsg(ws, msg)
+		case 1: //(c→ s)[connect] → (s→ c)[connected]
+			err = checkConnectMsgAndSendConnected(ws, msg)
 		case 2: //(c→ s)[self info] → (s→ c)[playground info]
 			err = checkSelfInfoMsgAndSendPlaygroundInfoMsg(ws, msg)
 		case 3: //(c→ s)[disconnect] → (s→ c)[game over]
@@ -137,7 +137,7 @@ FLOWOVER:
 	ws.Close()
 }
 
-func checkConnectMsgAndSendAirplaneMsg(ws *websocket.Conn, msg message.Message) error {
+func checkConnectMsgAndSendConnected(ws *websocket.Conn, msg message.Message) error {
 	if msgType := msg.Type(); msgType != message.MsgConnect {
 		return fmt.Errorf(
 			"Message Type error: hope get connect message(type %v), but get %v.",
@@ -150,14 +150,13 @@ func checkConnectMsgAndSendAirplaneMsg(ws *websocket.Conn, msg message.Message) 
 		return err
 	}
 
-	ap, _ := ball.NewUserAirplane(ci.UID, ci.Nickname, 1, 0, 99, 99)
-	ai := &message.AirplaneCreatedInfo{Airplane: ap}
-	bs, err := ai.MarshalBinary()
+	cedi := &message.ConnectedInfo{UID: ci.UID, RID: ci.RID}
+	bs, err := cedi.MarshalBinary()
 	if err != nil {
 		return err
 	}
 
-	m := message.NewMessage(message.MsgAirplaneCreated, bs)
+	m := message.NewMessage(message.MsgConnected, bs)
 	bs, err = m.MarshalBinary()
 	if err != nil {
 		return err

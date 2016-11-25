@@ -8,15 +8,13 @@ import (
 
 var msgTime time.Time
 
-const testMessageLength = msgHeadSize + 10 + 9
+const testMessageLength = msgHeadSize + 8
 
 // generate ...
 func generateTestMessage() Message {
 	ci := &ConnectInfo{
-		UID:      2333,
-		Nickname: "test-user",
-		RID:      1,
-		Troop:    1,
+		UID: 2333,
+		RID: 1,
 	}
 
 	bs, _ := ci.MarshalBinary()

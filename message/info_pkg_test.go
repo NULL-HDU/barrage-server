@@ -157,31 +157,6 @@ func TestSpecialMsgInfo(t *testing.T) {
 
 }
 
-// TestAirplaneCreatedInfo ...
-func TestAirplaneCreatedInfo(t *testing.T) {
-	// MarshalBinary
-	airplane, err := ball.NewUserAirplane(0, "Tester", 1, 2, 99, 99)
-	aci := &AirplaneCreatedInfo{airplane}
-	bs, err := aci.MarshalBinary()
-	if err != nil {
-		t.Error(err)
-	}
-
-	if aci.Size() != 33 {
-		t.Errorf("Size of Marshaled bytes should be 33, but get %d.", aci.Size())
-	}
-	if l1, l2 := len(bs), aci.Size(); l1 != l2 {
-		t.Errorf("Result of Marshaled bytes is not correct, hope %d, get %d.", l2, l1)
-	}
-
-	// UnmarshalBinary
-	aci = &AirplaneCreatedInfo{}
-	err = aci.UnmarshalBinary(bs)
-	if uid := aci.Airplane.UID(); uid != b.UserID(0) {
-		t.Errorf("User Id of Unmarshaled AirplaneCreatedInfo should be %v, but get %v.", b.UserID(0), uid)
-	}
-}
-
 // TestDisconnectInfo ...
 func TestDisconnectInfo(t *testing.T) {
 	// MarshalBinary
@@ -206,10 +181,34 @@ func TestDisconnectInfo(t *testing.T) {
 	}
 }
 
+// TestConnectedInfo ...
+func TestConnectedInfo(t *testing.T) {
+	// MarshalBinary
+	ci := &ConnectedInfo{b.UserID(666666), b.RoomID(1)}
+	bs, err := ci.MarshalBinary()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if l1, l2 := len(bs), ci.Size(); l1 != l2 {
+		t.Errorf("Result of Marshaled bytes is not correct, hope %d, get %d.", l2, l1)
+	}
+
+	// UnmarshalBinary
+	ci = &ConnectedInfo{}
+	err = ci.UnmarshalBinary(bs)
+	if uid := ci.UID; uid != b.UserID(666666) {
+		t.Errorf("User Id of Unmarshaled ConnectedInfo should be %v, but get %v.", b.UserID(666666), uid)
+	}
+	if rid := ci.RID; rid != b.RoomID(1) {
+		t.Errorf("Room Id of Unmarshaled ConnectedInfo should be %v, but get %v.", b.RoomID(1), rid)
+	}
+}
+
 // TestConnectInfo ...
 func TestConnectInfo(t *testing.T) {
 	// MarshalBinary
-	ci := &ConnectInfo{b.UserID(666666), "Tester", b.RoomID(1), 1}
+	ci := &ConnectInfo{b.UserID(666666), b.RoomID(1)}
 	bs, err := ci.MarshalBinary()
 	if err != nil {
 		t.Error(err)
@@ -225,14 +224,8 @@ func TestConnectInfo(t *testing.T) {
 	if uid := ci.UID; uid != b.UserID(666666) {
 		t.Errorf("User Id of Unmarshaled ConnectInfo should be %v, but get %v.", b.UserID(666666), uid)
 	}
-	if nickname := ci.Nickname; nickname != "Tester" {
-		t.Errorf("Nickname of Unmarshaled ConnectInfo should be %v, but get %v.", "Tester", nickname)
-	}
 	if rid := ci.RID; rid != b.RoomID(1) {
 		t.Errorf("Room Id of Unmarshaled ConnectInfo should be %v, but get %v.", b.RoomID(1), rid)
-	}
-	if troop := ci.Troop; troop != uint8(1) {
-		t.Errorf("Troop of Unmarshaled ConnectInfo should be %v, but get %v.", uint8(1), troop)
 	}
 }
 

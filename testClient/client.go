@@ -16,12 +16,12 @@ var ipkgsLinkList *infoPkgNode
 var tailOfLinkList *infoPkgNode
 var websocketConn *websocket.Conn
 var infoTypeMap = map[m.InfoType]string{
-	m.InfoDisconnect:      "disconnect info",
-	m.InfoAirplaneCreated: "airplanecreated info",
-	m.InfoGameOver:        "gameover info",
-	m.InfoPlayground:      "playground info",
-	m.InfoSpecialMessage:  "specialmessage info",
-	m.InfoConnect:         "connect info",
+	m.InfoDisconnect:     "disconnect info",
+	m.InfoGameOver:       "gameover info",
+	m.InfoPlayground:     "playground info",
+	m.InfoSpecialMessage: "specialmessage info",
+	m.InfoConnect:        "connect info",
+	m.InfoConnected:      "connected info",
 }
 var uid b.UserID
 
@@ -109,12 +109,10 @@ func sendMessage(ipkg m.InfoPkg) error {
 	return nil
 }
 
-func sendConnectInfo(rid b.RoomID, name string) error {
+func sendConnectInfo(rid b.RoomID) error {
 	ci := &m.ConnectInfo{
-		UID:      uid,
-		Nickname: name,
-		RID:      rid,
-		Troop:    0,
+		UID: uid,
+		RID: rid,
 	}
 
 	return sendMessage(ci)
@@ -172,11 +170,6 @@ func showInfoPkg(n int) {
 		pi := ipkg.Body().(*m.PlaygroundInfo)
 		cmdface.Show(fmt.Sprintf("Balls: %d\n", pi.Displacements.Length()))
 		cmdface.Show(fmt.Sprintf("Collisions: %d\n", pi.Collisions.Length()))
-	case m.InfoAirplaneCreated:
-		ai := ipkg.Body().(*m.AirplaneCreatedInfo)
-		cmdface.Show(fmt.Sprintf("uid: %d\n", ai.Airplane.UID()))
-		cmdface.Show(fmt.Sprintf("id: %d\n", ai.Airplane.ID()))
-		cmdface.Show(fmt.Sprintf("v: %v\n", ai.Airplane))
 	default:
 		cmdface.Show(fmt.Sprintf("v: %v\n", ipkg.Body()))
 	}
@@ -208,7 +201,7 @@ func sendConnectInfoFunc(params []string) {
 	if err != nil {
 		cmdface.Show(err.Error())
 	}
-	if err = sendConnectInfo(b.RoomID(rid), params[1]); err != nil {
+	if err = sendConnectInfo(b.RoomID(rid)); err != nil {
 		cmdface.Show(err.Error())
 	}
 }

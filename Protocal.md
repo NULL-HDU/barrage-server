@@ -101,7 +101,7 @@ type value: 3  (0x03)
 
 message body: `userId(Uint32) + roomNumber(Uint32)`
 
-* userId: Uint32, the id of uint64.
+* userId: Uint32, the id of uint32.
 * roomNumber: Uint32, the room of game.
 
 ### 8. disconnect(leave early)
@@ -110,19 +110,17 @@ type value: 8  (0x08)
 
 message body: `userId(Uint32) + roomNumber(Uint32)`
 
-* userId: Uint32, the id of uint64.
+* userId: Uint32, the id of uint32.
 * roomNumber: Uint32, the room of game.
 
 ### 9. connect(join game)
 
 type value: 9  (0x09)
 
-message body: `userId(Uint32) + nickname(nickname) + roomNumber(Uint32) + troop(Uint8)`
+message body: `userId(Uint32) + roomNumber(Uint32)`
 
-* userId: Uint32, the id of uint64.
-* nickname: nickname, the name of user
+* userId: Uint32, the id of uint32.
 * roomNumber: Uint32, the room of game.
-* troop: Uint8, the troop number of user.
 
 ### 12. self info
 
@@ -155,14 +153,14 @@ message body: `roomNumber(Uint32)`
 
 * roomNumber: Uint32, the room of game.
 
-### 6. airplane of userself has been created
+### 6. connected(joined game)
 
 type value: 6  (0x06)
 
-message body: `airplane(ball) + nickname(nickname)`
+message body: `userId(Uint32) +  roomNumber(Uint32)`
 
-* airplane: ball, user's airplane
-* nickname: nickname, the name of user
+* userId: Uint32, the id of uint32.
+* roomNumber: Uint32, the room of game.
 
 ### 7. playground info
 

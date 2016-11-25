@@ -1,7 +1,6 @@
 package message
 
 import (
-	"barrage-server/ball"
 	b "barrage-server/base"
 	"barrage-server/libs/bufbo"
 	"bytes"
@@ -86,41 +85,6 @@ func (smi *SpecialMsgInfo) UnmarshalBinary(bs []byte) error {
 	return nil
 }
 
-// AirplaneCreatedInfo send information from Room to User after user connecting to server.
-type AirplaneCreatedInfo struct {
-	Airplane ball.Ball
-}
-
-// Type return type of information
-func (aci *AirplaneCreatedInfo) Type() InfoType {
-	return InfoAirplaneCreated
-}
-
-// Body return AirplaneCreatedInfo self.
-func (aci *AirplaneCreatedInfo) Body() Info {
-	return aci
-}
-
-// Size return the number of bytes after marshaled.
-func (aci *AirplaneCreatedInfo) Size() int {
-	return aci.Airplane.Size()
-}
-
-// MarshalBinary marshal AirplaneCreatedInfo to bytes
-func (aci *AirplaneCreatedInfo) MarshalBinary() ([]byte, error) {
-	bs, err := aci.Airplane.MarshalBinary()
-	if err != nil {
-		return nil, fmt.Errorf("AirplaneCreatedInfo MarshalError: %v", err)
-	}
-	return bs, nil
-}
-
-// UnmarshalBinary unmarshal AirplaneCreatedInfo from bytes
-func (aci *AirplaneCreatedInfo) UnmarshalBinary(bs []byte) error {
-	aci.Airplane = ball.NewBall()
-	return aci.Airplane.UnmarshalBinary(bs)
-}
-
 // DisconnectInfo send information from User to Room while user disconnecting
 // game early, holding data about user id and the id of that user's room.
 type DisconnectInfo struct {
@@ -167,13 +131,54 @@ func (di *DisconnectInfo) UnmarshalBinary(bs []byte) error {
 	return nil
 }
 
+// ConnectedInfo send information from User to Room while user joining
+// game.
+type ConnectedInfo struct {
+	UID b.UserID
+	RID b.RoomID
+}
+
+// Type return type of information
+func (ci *ConnectedInfo) Type() InfoType {
+	return InfoConnected
+}
+
+// Body return ConnectedInfo self.
+func (ci *ConnectedInfo) Body() Info {
+	return ci
+}
+
+// Size return the number of bytes after marshaled.
+func (ci *ConnectedInfo) Size() int {
+	return 8
+}
+
+// MarshalBinary marshal ConnectedInfo to bytes
+func (ci *ConnectedInfo) MarshalBinary() ([]byte, error) {
+	bs := make([]byte, ci.Size())
+	bw := bufbo.NewBEBytesWriter(bs)
+
+	bw.PutUint32(uint32(ci.UID))
+	bw.PutUint32(uint32(ci.RID))
+
+	return bs, nil
+}
+
+// UnmarshalBinary unmarshal ConnectedInfo from bytes
+func (ci *ConnectedInfo) UnmarshalBinary(bs []byte) error {
+	br := bufbo.NewBEBytesReader(bs)
+
+	ci.UID = b.UserID(br.Uint32())
+	ci.RID = b.RoomID(br.Uint32())
+
+	return nil
+}
+
 // ConnectInfo send information from User to Room while user joining
 // game.
 type ConnectInfo struct {
-	UID      b.UserID
-	Nickname string
-	RID      b.RoomID
-	Troop    uint8
+	UID b.UserID
+	RID b.RoomID
 }
 
 // Type return type of information
@@ -188,7 +193,7 @@ func (ci *ConnectInfo) Body() Info {
 
 // Size return the number of bytes after marshaled.
 func (ci *ConnectInfo) Size() int {
-	return 10 + len(ci.Nickname)
+	return 8
 }
 
 // MarshalBinary marshal ConnectInfo to bytes
@@ -197,10 +202,7 @@ func (ci *ConnectInfo) MarshalBinary() ([]byte, error) {
 	bw := bufbo.NewBEBytesWriter(bs)
 
 	bw.PutUint32(uint32(ci.UID))
-	bw.PutUint8(uint8(len(ci.Nickname)))
-	bw.PutStr(ci.Nickname)
 	bw.PutUint32(uint32(ci.RID))
-	bw.PutUint8(ci.Troop)
 
 	return bs, nil
 }
@@ -210,9 +212,7 @@ func (ci *ConnectInfo) UnmarshalBinary(bs []byte) error {
 	br := bufbo.NewBEBytesReader(bs)
 
 	ci.UID = b.UserID(br.Uint32())
-	ci.Nickname = br.Str(int(br.Uint8()))
 	ci.RID = b.RoomID(br.Uint32())
-	ci.Troop = br.Uint8()
 
 	return nil
 }

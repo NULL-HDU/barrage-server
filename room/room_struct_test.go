@@ -1,7 +1,6 @@
 package room
 
 import (
-	"barrage-server/ball"
 	b "barrage-server/base"
 	m "barrage-server/message"
 	tm "barrage-server/testLib/message"
@@ -161,15 +160,20 @@ func (tu *testUser) BindRoom(id b.RoomID, c chan<- m.InfoPkg) {
 func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 	r := NewRoom(20)
 	checkFunc := func(bs []byte, itype m.InfoType) {
-		if itype != m.InfoAirplaneCreated {
-			return
+		if itype != m.InfoConnected {
+			t.Errorf("Receive wrong message type, hope %d, get %d.", m.InfoConnected, itype)
 		}
-		airplane, err := ball.NewBallFromBytes(bs)
-		if err != nil {
+
+		ci := new(m.ConnectedInfo)
+		if err := ci.UnmarshalBinary(bs); err != nil {
 			t.Error(err)
 		}
-		if airplaneID := airplane.UID(); airplaneID != 1 {
-			t.Errorf("User id of airplane should be %d, but get %d.", 1, airplaneID)
+
+		if ci.UID != 1 {
+			t.Errorf("User id of ConnectedInfo should be %d, get %d.", 1, ci.UID)
+		}
+		if ci.RID != 20 {
+			t.Errorf("Room id of ConnectedInfo should be %d, get %d.", 20, ci.RID)
 		}
 	}
 
@@ -182,38 +186,20 @@ func TestRoomUserJoinAndLeftAndIDAndUsers(t *testing.T) {
 	}
 
 	tu1 := &testUser{id: 1, checkFunc: checkFunc}
-	if err := r.UserJoin(tu1, "tester"); err != nil {
-		t.Error(err)
-	}
-
 	tu2 := &testUser{id: 2}
 	tu3 := &testUser{id: 3}
 	tu4 := &testUser{id: 4}
 
-	if err := r.UserJoin(tu2, "tester"); err != nil {
+	if err := r.UserJoin(tu1); err != nil {
 		t.Error(err)
 	}
-	pi := new(m.PlaygroundInfo)
-	if err := pi.UnmarshalBinary(r.playground.PkgsForEachUser()[0].CacheBytes); err != nil {
+	if err := r.UserJoin(tu2); err != nil {
 		t.Error(err)
 	}
-	if lenNewBalls := pi.NewBalls.Length(); lenNewBalls != 0 {
-		t.Errorf("Length of newBalls should be %d, but get %d.", 0, lenNewBalls)
-	}
-	if lenDisplace := pi.Displacements.Length(); lenDisplace != 1 {
-		t.Errorf("Length of Displace should be %d, but get %d.", 0, lenDisplace)
-	}
-	if lenCollisions := pi.Collisions.Length(); lenCollisions != 0 {
-		t.Errorf("Length of Collisions should be %d, but get %d.", 0, lenCollisions)
-	}
-	if lenDisappears := len(pi.Disappears.IDs); lenDisappears != 0 {
-		t.Errorf("Length of disappears should be %d, but get %d.", 0, lenDisappears)
-	}
-
-	if err := r.UserJoin(tu3, "tester"); err != nil {
+	if err := r.UserJoin(tu3); err != nil {
 		t.Error(err)
 	}
-	if err := r.UserJoin(tu4, "tester"); err != nil {
+	if err := r.UserJoin(tu4); err != nil {
 		t.Error(err)
 	}
 
@@ -246,7 +232,7 @@ func TestRoomDisconnect(t *testing.T) {
 	Open(r, time.Second)
 
 	tu1 := &testUser{id: 1}
-	if err := r.UserJoin(tu1, "tester"); err != nil {
+	if err := r.UserJoin(tu1); err != nil {
 		t.Error(err)
 	}
 
@@ -267,9 +253,9 @@ func TestRoomDisconnect(t *testing.T) {
 
 //TestRoomHandlePlaygroundInfo ...
 func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
-	pi1 := tm.GenerateTestRandomPlaygroundInfo(1, 25, 40, 15, 20)
-	pi2 := tm.GenerateTestRandomPlaygroundInfo(2, 25, 40, 15, 20)
-	pi3 := tm.GenerateTestRandomPlaygroundInfo(3, 25, 40, 15, 20)
+	pi1 := tm.GenerateTestRandomPlaygroundInfo(1, 30, 40, 15, 20)
+	pi2 := tm.GenerateTestRandomPlaygroundInfo(2, 30, 40, 15, 20)
+	pi3 := tm.GenerateTestRandomPlaygroundInfo(3, 30, 40, 15, 20)
 	checkFunc := func(bs []byte, itype m.InfoType) {
 		if itype != m.InfoPlayground {
 			return
@@ -283,8 +269,8 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 		if nbLen := piBak.NewBalls.Length(); nbLen != 0 {
 			t.Errorf("Number of NewBalls is wrong, hope %d, get %d.", 0, nbLen)
 		}
-		if diLen := piBak.Displacements.Length(); diLen != 132 {
-			t.Errorf("Number of Displacements is wrong, hope %d, get %d.", 132, diLen)
+		if diLen := piBak.Displacements.Length(); diLen != 140 {
+			t.Errorf("Number of Displacements is wrong, hope %d, get %d.", 140, diLen)
 		}
 		if ciLen := piBak.Collisions.Length(); ciLen != 30 {
 			t.Errorf("Number of CollisionsInfo is wrong, hope %d, get %d.", 30, ciLen)
@@ -302,19 +288,17 @@ func TestRoomHandlePlaygroundInfoAndPlaygroundBoardCast(t *testing.T) {
 	r := NewRoom(20)
 	Open(r, time.Second)
 
-	if err := r.UserJoin(tu1, "tester"); err != nil {
+	if err := r.UserJoin(tu1); err != nil {
 		t.Error(err)
 	}
-	if err := r.UserJoin(tu2, "tester"); err != nil {
+	if err := r.UserJoin(tu2); err != nil {
 		t.Error(err)
 	}
-	if err := r.UserJoin(tu3, "tester"); err != nil {
+	if err := r.UserJoin(tu3); err != nil {
 		t.Error(err)
 	}
 
 	tu1.UploadInfo(pi1)
-	time.Sleep(time.Millisecond * 100)
-
 	tu2.UploadInfo(pi2)
 	tu3.UploadInfo(pi3)
 

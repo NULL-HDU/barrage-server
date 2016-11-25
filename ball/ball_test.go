@@ -85,6 +85,11 @@ func TestNewUserAirplane(t *testing.T) {
 		t.Errorf("Hope get %v, but get %v", testBallSize, bSize)
 	}
 
+	defaultBall = NewBall()
+	if err := defaultBall.UnmarshalBinary(b); err != nil {
+		t.Error(err)
+	}
+
 	if newBallSize := newBall.Size(); newBallSize != testBallSize {
 		t.Errorf("Hope get %v, but get %v", testBallSize, newBallSize)
 	}

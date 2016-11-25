@@ -27,6 +27,8 @@ const (
 	// InfoAirplaneCreated is used to send airplane of userself to frontend while user connecting
 	// into game.
 	InfoAirplaneCreated
+	// InfoConnected is used when room done the connect for user.
+	InfoConnected
 
 	// User -> Room -----------------------------------------------------------
 
@@ -35,7 +37,7 @@ const (
 	// InfoDisconnect is used when user want to leave game early(now, just leave room to hall).
 	InfoDisconnect
 
-	// Room -> User, Playground -> Room, User -> Room -------------------------
+	// Room -> User, User -> Room -------------------------
 
 	// InfoPlayground is used when backend send balls info to frontend.
 	InfoPlayground
@@ -72,8 +74,8 @@ func NewInfoPkgFromMsg(msg Message) (InfoPkg, error) {
 		ipkg = &DisconnectInfo{}
 	case MsgConnect:
 		ipkg = &ConnectInfo{}
-	case MsgAirplaneCreated:
-		ipkg = &AirplaneCreatedInfo{}
+	case MsgConnected:
+		ipkg = &ConnectedInfo{}
 	case MsgGameOver:
 		ipkg = &GameOverInfo{}
 	case MsgPlayground:

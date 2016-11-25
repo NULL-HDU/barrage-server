@@ -1,7 +1,6 @@
 package room
 
 import (
-	"barrage-server/ball"
 	b "barrage-server/base"
 	m "barrage-server/message"
 	pg "barrage-server/playground"
@@ -60,33 +59,18 @@ func (r *Room) Users() (users []b.UserID) {
 
 // UserJoin ...
 // now this function will create an Airplane.
-func (r *Room) UserJoin(u user.User, name string) error {
+func (r *Room) UserJoin(u user.User) error {
 	if err := r.userJoin(u); err != nil {
 		return err
 	}
 
 	uid := u.ID()
-	airplane, err := pg.CreateAirplaneInPlayGround(uid, name, 1, 0)
-	if err != nil {
-		return err
-	}
 
-	r.playground.PutPkg(&m.PlaygroundInfo{
-		Sender: uid,
-		NewBalls: &m.BallsInfo{
-			BallInfos: []ball.Ball{airplane},
-		},
-		Displacements: new(m.BallsInfo),
-		Collisions:    new(m.CollisionsInfo),
-		Disappears:    new(m.DisappearsInfo),
-	})
+	// send connected info back to front end.
+	ci := &m.ConnectedInfo{UID: uid, RID: r.id}
+	u.Send(ci)
 
-	// send airplaneCreatedInfo
-	aci := new(m.AirplaneCreatedInfo)
-	aci.Airplane = airplane
-	u.Send(aci)
-
-	logger.Infof("User %d join room %d. \n", u.ID(), r.id)
+	logger.Infof("User %d join room %d. \n", uid, r.id)
 
 	return nil
 }

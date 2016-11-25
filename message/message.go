@@ -27,9 +27,8 @@ const (
 	// MsgPlayground is used when backend send balls info to frontend.
 	// this message package dosen't include newBalls.
 	MsgPlayground MsgType = 0x07
-	// MsgAirplaneCreated is used to send airplane of userself to frontend while user connecting
-	// into game.
-	MsgAirplaneCreated MsgType = 0x06
+	// MsgConnected is used when backend tell user has been connect.
+	MsgConnected MsgType = 0x06
 
 	// frontend -> backend
 
@@ -54,12 +53,12 @@ var (
 )
 
 var infoMsgSendMap = map[InfoType]MsgType{
-	InfoGameOver:        MsgGameOver,
-	InfoSpecialMessage:  MsgSpecialMessage,
-	InfoAirplaneCreated: MsgAirplaneCreated,
-	InfoPlayground:      MsgPlayground,
-	InfoConnect:         MsgConnect,
-	InfoDisconnect:      MsgDisconnect,
+	InfoGameOver:       MsgGameOver,
+	InfoSpecialMessage: MsgSpecialMessage,
+	InfoConnected:      MsgConnected,
+	InfoPlayground:     MsgPlayground,
+	InfoConnect:        MsgConnect,
+	InfoDisconnect:     MsgDisconnect,
 }
 
 // Message is the interface implemented by an object that can analyze base form of message

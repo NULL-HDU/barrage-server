@@ -24,7 +24,7 @@ const (
 )
 
 func generateBall() ball.Ball {
-	b, _ := ball.NewUserAirplane(0, "airplane", 1, 0, 99, 99)
+	b := ball.NewBallWithSpecialID(0, 99)
 	return b
 }
 

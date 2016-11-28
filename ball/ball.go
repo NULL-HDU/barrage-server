@@ -46,7 +46,7 @@ const (
 )
 
 const (
-	ballBaseSize = 27
+	ballBaseSize = 28
 )
 
 type hp uint8
@@ -55,7 +55,7 @@ type role uint8
 
 type special uint16
 
-type speed uint8
+type radius uint16
 
 type attackDir float32
 
@@ -90,42 +90,10 @@ type ball struct {
 	damage    b.Damage
 	role      role
 	special   special
-	speed     speed
+	radius    radius
 	attackDir attackDir
 	state     State
 	location  location
-}
-
-// NewUserAirplane creates an airplane for user.
-//
-// hp, damage, speed and attackDir is generate automatically according to roleConf
-// of roleConfTable[r].
-func NewUserAirplane(c b.UserID, nickname string, aRole uint8, aSpecial uint16, x uint16, y uint16) (Ball, error) {
-	// TODO: we need a role table. Analyze from json file,
-	//       but now we just write hard.
-	r := role(aRole)
-	s := special(aSpecial)
-	airPlaneRole, ok := roleConfTable[r]
-	if !ok {
-		return nil, fmt.Errorf(
-			"%v the role id is %d, While create ball(%d %d) via NewUserAirplane.\n",
-			errInvalidRole, r, c, 0)
-	}
-
-	return &ball{
-		uid:       c,
-		id:        0,
-		nickname:  nickname,
-		bType:     AirPlane,
-		hp:        airPlaneRole.hp,
-		damage:    airPlaneRole.damage,
-		role:      r,
-		special:   s,
-		speed:     airPlaneRole.speed,
-		attackDir: airPlaneRole.attackDir,
-		state:     Alive,
-		location:  location{x, y},
-	}, nil
 }
 
 // NewBallFromBytes creates ball from bytes,
@@ -162,6 +130,10 @@ func (bl *ball) ID() b.BallID {
 	return bl.id
 }
 
+func (bl *ball) Radius() radius {
+	return bl.radius
+}
+
 func (bl *ball) HP() hp {
 	return bl.hp
 }
@@ -195,7 +167,7 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 	bw := bufbo.NewBEBytesWriter(bs)
 
 	//uid(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint16) + damage(damage)+
-	//role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(Uint16) + alive(bool) +
+	//role(Uint8) + special(Uint16) + radius(Uint8) + attackDir(Uint16) + alive(bool) +
 	//isKilled(bool) + locationCurrent(location)
 	bw.PutUint32(uint32(bl.uid))
 	bw.PutUint32(uint32(bl.uid))
@@ -212,12 +184,12 @@ func (bl *ball) MarshalBinary() ([]byte, error) {
 	bw.PutUint8(uint8(bl.damage))
 	bw.PutUint8(uint8(bl.role))
 	bw.PutUint16(uint16(bl.special))
-	bw.PutUint8(uint8(bl.speed))
+	bw.PutUint16(uint16(bl.radius))
 	bw.PutFloat32(float32(bl.attackDir))
 	bw.PutUint8(uint8(bl.state))
 	bw.PutUint16(bl.location.x)
 	bw.PutUint16(bl.location.y)
-	// 34 + bytes
+	// 28 + bytes
 
 	return bs, nil
 }
@@ -234,7 +206,7 @@ func (bl *ball) UnmarshalBinary(data []byte) error {
 	bl.damage = b.Damage(br.Uint8())
 	bl.role = role(br.Uint8())
 	bl.special = special(br.Uint16())
-	bl.speed = speed(br.Uint8())
+	bl.radius = radius(br.Uint16())
 	bl.attackDir = attackDir(br.Float32())
 	bl.state = State(br.Uint8())
 	bl.location.x = br.Uint16()

@@ -20,7 +20,7 @@ func generateBall() Ball {
 		role:      1,
 		hp:        100,
 		damage:    10,
-		speed:     10,
+		radius:    10,
 		attackDir: 400,
 		location:  location{99, 99},
 	}
@@ -42,8 +42,8 @@ func compare(std Ball, b Ball) error {
 	if dball.attackDir != nball.attackDir {
 		return fmt.Errorf("Hope %v, get %v.", dball.attackDir, nball.attackDir)
 	}
-	if dball.speed != nball.speed {
-		return fmt.Errorf("Hope %v, get %v.", dball.speed, nball.speed)
+	if dball.radius != nball.radius {
+		return fmt.Errorf("Hope %v, get %v.", dball.radius, nball.radius)
 	}
 	if dball.damage != nball.damage {
 		return fmt.Errorf("Hope %v, get %v.", dball.damage, nball.damage)
@@ -70,13 +70,8 @@ func compare(std Ball, b Ball) error {
 	return nil
 }
 
-func TestNewUserAirplane(t *testing.T) {
-	defaultBall := generateBall()
-	newBall, _ := NewUserAirplane(1234, "9999 9999", 1, 99, 99, 99)
-
-	if err := compare(defaultBall, newBall); err != nil {
-		t.Error(err)
-	}
+func TestMarshalAndUnmarshal(t *testing.T) {
+	newBall := generateBall()
 
 	b, _ := newBall.MarshalBinary()
 	t.Logf("MarshalBinary result: % x", b)
@@ -85,19 +80,15 @@ func TestNewUserAirplane(t *testing.T) {
 		t.Errorf("Hope get %v, but get %v", testBallSize, bSize)
 	}
 
-	defaultBall = NewBall()
-	if err := defaultBall.UnmarshalBinary(b); err != nil {
+	newBall2 := NewBall()
+	if err := newBall2.UnmarshalBinary(b); err != nil {
 		t.Error(err)
 	}
 
-	if newBallSize := newBall.Size(); newBallSize != testBallSize {
-		t.Errorf("Hope get %v, but get %v", testBallSize, newBallSize)
+	if err := compare(newBall, newBall2); err != nil {
+		t.Error(err)
 	}
 
-	_, err := NewUserAirplane(1234, "9999 9999", 255, 99, 99, 99)
-	if !strings.Contains(err.Error(), errInvalidRole.Error()) {
-		t.Errorf("Hope get '%v', but get '%v'.", errInvalidRole, err)
-	}
 }
 
 func TestNewBallFromBytes(t *testing.T) {

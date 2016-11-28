@@ -26,7 +26,7 @@
 * userId: Uint32, the id of the creator of this ball
 * id: Uint16, it is a value from 1 - 2*32. After user creating a ball, it add to one. 0 is user's airplane
 
-**ball**: `camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint8) + damage(damage) + role(Uint8) + special(Uint16) + speed(Uint8) + attackDir(float32) + status(uint8) + isKilled(bool) + locationCurrent(location)`
+**ball**: `camp(userId) + ballId(ballId) + ballType(Uint8) + hp(Uint8) + damage(damage) + role(Uint8) + special(Uint16) + radius(uint16) + attackDir(float32) + status(uint8) + locationCurrent(location)`
 
 ballType: uint8, type of ball[^footnote1]
 status: uint8, status of the ball[^footnote2]

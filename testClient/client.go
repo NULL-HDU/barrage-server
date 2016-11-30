@@ -169,6 +169,7 @@ func showInfoPkg(n int) {
 	case m.InfoPlayground:
 		pi := ipkg.Body().(*m.PlaygroundInfo)
 		cmdface.Show(fmt.Sprintf("Balls: %d\n", pi.Displacements.Length()))
+		cmdface.Show(fmt.Sprintf("NewBalls: %d\n", pi.NewBalls.Length()))
 		cmdface.Show(fmt.Sprintf("Collisions: %d\n", pi.Collisions.Length()))
 	default:
 		cmdface.Show(fmt.Sprintf("v: %v\n", ipkg.Body()))

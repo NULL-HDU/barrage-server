@@ -12,8 +12,9 @@ import (
 var logger = b.Log
 
 const (
-	collisionIndex = iota
+	newBallIndex = iota
 	ballsIndex
+	collisionIndex
 
 	// cache data for send to self client.
 	bufferIndex
@@ -43,7 +44,7 @@ type bytesCache struct {
 
 // generateCacheMap create and init a cache map
 func generateCacheMap() (cacheMap []bytesCache) {
-	cacheMap = make([]bytesCache, 3)
+	cacheMap = make([]bytesCache, 4)
 	return
 }
 
@@ -72,8 +73,12 @@ type Playground interface {
 type playground struct {
 	mapM sync.RWMutex
 
-	userCollision map[b.UserID][]*m.CollisionInfo
-	userBallCache map[b.UserID]ballCache
+	// all balls in playground
+	ballsGround map[b.UserID]ballCache
+	// collect new balls templately
+	userNewBallsCache map[b.UserID]ballCache
+	// collect collisionInfo templately
+	userCollisionCache map[b.UserID][]*m.CollisionInfo
 
 	// not concurrent secrity. only be used by fillPlaygroundInfo.
 	userBytesCache map[b.UserID][]bytesCache
@@ -82,55 +87,26 @@ type playground struct {
 // NewPlayground create default implement of Playground.
 func NewPlayground() Playground {
 	pg := &playground{
-		userCollision:  make(map[b.UserID][]*m.CollisionInfo),
-		userBallCache:  make(map[b.UserID]ballCache),
-		userBytesCache: make(map[b.UserID][]bytesCache),
+		userCollisionCache: make(map[b.UserID][]*m.CollisionInfo),
+		ballsGround:        make(map[b.UserID]ballCache),
+		userNewBallsCache:  make(map[b.UserID]ballCache),
+		userBytesCache:     make(map[b.UserID][]bytesCache),
 	}
 
 	pg.AddUser(b.SysID)
 	return pg
 }
 
-// PkgsForEachUser ...
-func (pg *playground) PkgsForEachUser() (pis []*m.PlaygroundInfo) {
-	pg.mapM.RLock()
-	defer pg.mapM.RUnlock()
-
-	// pre-compile and cache result
-	pg.preCompileForEachUser()
-
-	// construct playgroundInfo for each user.
-	// not include Sys user
-	pis = make([]*m.PlaygroundInfo, len(pg.userBallCache)-1)
-	for i := range pis {
-		pis[i] = new(m.PlaygroundInfo)
-	}
-
-	count := 0
-	for uid := range pg.userBallCache {
-		if uid == b.SysID {
-			continue
-		}
-		pg.fillPlaygroundInfo(uid, pis[count])
-		count++
-	}
-
-	// clean cache
-	pg.cleanCacheForEachUser()
-
-	return
-}
-
-// preCompileForEachUser compile Balls and CollisionInfos in the userBallCache and userCollision of
+// preCompileForEachUser compile Balls and CollisionInfos in the ballsGround and userCollisionCache of
 // a user, and put the compiled bytes into userBytesCache, the next operating will take advantage of
 // these bytes.
 func (pg *playground) preCompileForEachUser() {
-	for uid := range pg.userBallCache {
+	for uid := range pg.ballsGround {
 		bsc := pg.userBytesCache[uid]
 
 		// compile and cache collisionInfo
 		csi := new(m.CollisionsInfo)
-		csi.CollisionInfos = pg.userCollision[uid]
+		csi.CollisionInfos = pg.userCollisionCache[uid]
 		bs, err := m.MarshalListBinary(csi)
 		if err != nil {
 			logger.Errorln(err)
@@ -141,7 +117,7 @@ func (pg *playground) preCompileForEachUser() {
 
 		// compile and cache ballsIndex
 		bi := new(m.BallsInfo)
-		bi.BallInfos = pg.userBallCache[uid].Balls()
+		bi.BallInfos = pg.ballsGround[uid].Balls()
 		bs, err = m.MarshalListBinary(bi)
 		if err != nil {
 			logger.Errorln(err)
@@ -149,6 +125,17 @@ func (pg *playground) preCompileForEachUser() {
 
 		bsc[ballsIndex].Num = uint32(bi.Length())
 		bsc[ballsIndex].Buf = append(bsc[ballsIndex].Buf, bs[4:]...)
+
+		// compile and cache newBallIndex
+		nbi := new(m.BallsInfo)
+		nbi.BallInfos = pg.userNewBallsCache[uid].Balls()
+		bs, err = m.MarshalListBinary(nbi)
+		if err != nil {
+			logger.Errorln(err)
+		}
+
+		bsc[newBallIndex].Num = uint32(nbi.Length())
+		bsc[newBallIndex].Buf = append(bsc[newBallIndex].Buf, bs[4:]...)
 	}
 }
 
@@ -160,7 +147,7 @@ func (pg *playground) fillPlaygroundInfo(uid b.UserID, pi *m.PlaygroundInfo) {
 	bufferCache := &pg.userBytesCache[uid][bufferIndex]
 
 	// append newBallsInfo
-	bufferCache.Buf = append(bufferCache.Buf, []byte{0, 0, 0, 0}...)
+	pg.constructApartBytesFor(uid, newBallIndex)
 	// append displacementInfo
 	pg.constructApartBytesFor(uid, ballsIndex)
 	// append collisionInfo
@@ -193,14 +180,50 @@ func (pg *playground) constructApartBytesFor(uid b.UserID, partIndex int) {
 }
 
 func (pg *playground) cleanCacheForEachUser() {
-	for uid := range pg.userBallCache {
-		pg.userCollision[uid] = pg.userCollision[uid][:0]
+	for uid := range pg.ballsGround {
+		pg.userCollisionCache[uid] = pg.userCollisionCache[uid][:0]
 		bsc := pg.userBytesCache[uid]
 
+		clearCache(&bsc[newBallIndex])
 		clearCache(&bsc[ballsIndex])
 		clearCache(&bsc[collisionIndex])
 		clearCache(&bsc[bufferIndex])
+
+		for k, v := range pg.userNewBallsCache[uid] {
+			pg.ballsGround[uid][k] = v
+		}
+		pg.userNewBallsCache[uid] = ballCache{}
 	}
+}
+
+// PkgsForEachUser ...
+func (pg *playground) PkgsForEachUser() (pis []*m.PlaygroundInfo) {
+	pg.mapM.RLock()
+	defer pg.mapM.RUnlock()
+
+	// pre-compile and cache result
+	pg.preCompileForEachUser()
+
+	// construct playgroundInfo for each user.
+	// not include Sys user
+	pis = make([]*m.PlaygroundInfo, len(pg.ballsGround)-1)
+	for i := range pis {
+		pis[i] = new(m.PlaygroundInfo)
+	}
+
+	count := 0
+	for uid := range pg.ballsGround {
+		if uid == b.SysID {
+			continue
+		}
+		pg.fillPlaygroundInfo(uid, pis[count])
+		count++
+	}
+
+	// clean cache
+	pg.cleanCacheForEachUser()
+
+	return
 }
 
 // PutPkg ...
@@ -208,33 +231,42 @@ func (pg *playground) PutPkg(pi *m.PlaygroundInfo) error {
 	return pg.packUpPkgs(pi)
 }
 
-// packUpPkg put Balls of newBallsInfo into userBallCache of the Sender, set Balls of DisplacementsInfo
-// into userBallCache of ther Sender, cache collisionInfo of CollisionsInfo in userCollision of the Sender,
+// packUpPkg put Balls of newBallsInfo into ballsGround of the Sender, set Balls of DisplacementsInfo
+// into ballsGround of ther Sender, cache collisionInfo of CollisionsInfo in userCollisionCache of the Sender,
 // and delete Balls of Disappears of the Sender.
 func (pg *playground) packUpPkgs(pi *m.PlaygroundInfo) error {
 	pg.mapM.Lock()
 	defer pg.mapM.Unlock()
 
 	uid := pi.Sender
-	_, ok := pg.userBallCache[uid]
+	_, ok := pg.ballsGround[uid]
 	if !ok {
 		return ErrNotFoundUser
 	}
 
 	// TODO: more check
-	bc := pg.userBallCache[uid]
+	bg := pg.ballsGround[uid]
+	nb := pg.userNewBallsCache[uid]
 
 	// newBallsInfo, add new ball to ballCache map of uid
 	for _, v := range pi.NewBalls.BallInfos {
-		bc[v.ID()] = v
+		nb[v.ID()] = v
 	}
 
-	// displacementInfo, modify existing balls
+	// displacementInfo, if ball is not in ballsGround, the ball should in newBallsCache
+	// then modify existing balls in the appropriate place.
 	for _, v := range pi.Displacements.BallInfos {
-		bc[v.ID()] = v
+		if _, ok := nb[v.ID()]; ok {
+			nb[v.ID()] = v
+			continue
+		}
+		if _, ok := bg[v.ID()]; ok {
+			bg[v.ID()] = v
+			continue
+		}
 	}
 
-	// collisionInfo, base check and cache them to userCollision
+	// collisionInfo, base check and cache them to userCollisionCache
 	validCollisionInfos := make([]*m.CollisionInfo, 0, pi.Collisions.Length())
 	for _, v := range pi.Collisions.CollisionInfos {
 		// there are an unknow error
@@ -256,27 +288,32 @@ func (pg *playground) packUpPkgs(pi *m.PlaygroundInfo) error {
 		validCollisionInfos = append(validCollisionInfos, v)
 	}
 
-	pg.userCollision[uid] = append(pg.userCollision[uid], validCollisionInfos...)
+	pg.userCollisionCache[uid] = append(pg.userCollisionCache[uid], validCollisionInfos...)
 
 	// disappearInfos
 	for _, v := range pi.Disappears.IDs {
-		delete(bc, v)
+		delete(bg, v)
+		delete(nb, v)
 	}
 
 	return nil
-
 }
 
 // checkAndDeleteBall, a valid collisionInfo means if one of collision ball is death or disappear,
-// this ball should be found in userBallCache, otherwise the collisionInfo is invalid.
+// this ball should be found in ballsGround, otherwise the collisionInfo is invalid.
 func (pg *playground) checkAndDeleteBall(uid b.UserID, id b.BallID) (deleted bool) {
-	v, ok := pg.userBallCache[uid]
+	v, ok := pg.ballsGround[uid]
 	if !ok {
 		return false
 	}
+
 	_, ok = v[id]
 	if !ok {
-		return false
+		v = pg.userNewBallsCache[uid]
+		_, ok = v[id]
+		if !ok {
+			return false
+		}
 	}
 
 	delete(v, id)
@@ -288,35 +325,24 @@ func (pg *playground) AddUser(uid b.UserID) {
 	pg.mapM.Lock()
 	defer pg.mapM.Unlock()
 
-	_, ok := pg.userBallCache[uid]
+	_, ok := pg.ballsGround[uid]
 	if ok {
 		return
 	}
 
-	bc := ballCache{}
-	pg.userCollision[uid] = make([]*m.CollisionInfo, 0)
-	pg.userBallCache[uid] = bc
+	pg.userCollisionCache[uid] = make([]*m.CollisionInfo, 0)
+	pg.ballsGround[uid] = ballCache{}
+	pg.userNewBallsCache[uid] = ballCache{}
 	pg.userBytesCache[uid] = generateCacheMap()
 }
 
-// DeleteUser ...
-func (pg *playground) DeleteUser(uid b.UserID) {
-	pg.mapM.Lock()
-	defer pg.mapM.Unlock()
-
-	_, ok := pg.userBallCache[uid]
-	if !ok {
-		return
-	}
-
-	// move collisionInfos of the uid user to SysID user.
-	pg.userCollision[b.SysID] = append(pg.userCollision[b.SysID], pg.userCollision[uid]...)
-
+// changeBallsToCollisionInfoAndPutToSysCache ...
+func (pg *playground) changeBallsToCollisionInfoAndPutToSysCache(uid b.UserID, bc ballCache) {
 	// change all ball to be collisionInfo and add then to SysID user.
 	// TODO: maybe balls of delete user or death user could be food or block
-	newCollisions := make([]*m.CollisionInfo, len(pg.userBallCache[uid]))
+	newCollisions := make([]*m.CollisionInfo, len(bc))
 	fid1 := b.FullBallID{UID: b.SysID, ID: b.SysID}
-	for i, ub := range pg.userBallCache[uid].Balls() {
+	for i, ub := range bc.Balls() {
 		fid2 := b.FullBallID{UID: uid, ID: ub.ID()}
 		newCollisions[i] = &m.CollisionInfo{
 			IDs:     []b.FullBallID{fid1, fid2},
@@ -324,10 +350,30 @@ func (pg *playground) DeleteUser(uid b.UserID) {
 			States:  []ball.State{ball.Alive, ball.Disappear},
 		}
 	}
-	pg.userCollision[b.SysID] = append(pg.userCollision[b.SysID], newCollisions...)
+	pg.userCollisionCache[b.SysID] = append(pg.userCollisionCache[b.SysID], newCollisions...)
+}
 
-	delete(pg.userCollision, uid)
-	delete(pg.userBallCache, uid)
+// DeleteUser ...
+func (pg *playground) DeleteUser(uid b.UserID) {
+	pg.mapM.Lock()
+	defer pg.mapM.Unlock()
+
+	_, ok := pg.ballsGround[uid]
+	if !ok {
+		return
+	}
+
+	// move collisionInfos of the uid user to SysID user.
+	pg.userCollisionCache[b.SysID] = append(pg.userCollisionCache[b.SysID], pg.userCollisionCache[uid]...)
+
+	// change and move balls in ballsGround into userCollisionCache of SysID user;
+	pg.changeBallsToCollisionInfoAndPutToSysCache(uid, pg.ballsGround[uid])
+	// change and move balls in userNewBallsCache into userCollisionCache of SysID user;
+	pg.changeBallsToCollisionInfoAndPutToSysCache(uid, pg.userNewBallsCache[uid])
+
+	delete(pg.userCollisionCache, uid)
+	delete(pg.ballsGround, uid)
+	delete(pg.userNewBallsCache, uid)
 	// TODO: cache map also should be cache. (cache map list pool for every room.)
 	delete(pg.userBytesCache, uid)
 }

@@ -29,49 +29,59 @@ func TestPlayground(t *testing.T) {
 	for i := 1; i <= 20; i++ {
 		pg.AddUser(b.UserID(i))
 	}
-	if ucLen := len(pg.userCollision); ucLen != 21 {
+	if ucLen := len(pg.userCollisionCache); ucLen != 21 {
 		t.Errorf("Length of user collisionInfo map is wrong, hope %d, get %d.", 21, ucLen)
 	}
-	if ubLen := len(pg.userBallCache); ubLen != 21 {
+	if ubLen := len(pg.ballsGround); ubLen != 21 {
 		t.Errorf("Length of user ballInfo map is wrong, hope %d, get %d.", 21, ubLen)
 	}
 	if ubsLen := len(pg.userBytesCache); ubsLen != 21 {
 		t.Errorf("Length of user bytesInfo map is wrong, hope %d, get %d.", 21, ubsLen)
 	}
+	if unbcLen := len(pg.userNewBallsCache); unbcLen != 21 {
+		t.Errorf("Length of user newBallInfo map is wrong, hope %d, get %d.", 21, unbcLen)
+	}
 
 	// PutPkg
-	pi := tm.GenerateTestRandomPlaygroundInfo(1, 20, 20, 5, 15)
+	pi := tm.GenerateTestRandomPlaygroundInfo(1, 22, 20, 5, 15)
 
 	if err := pg.PutPkg(pi); err != nil {
 		t.Error(err)
 	}
-	if ubcLen := len(pg.userBallCache[1]); ubcLen != 40 {
-		t.Errorf("Length of ballCache is wrong, hope %d, get %d.", 40, ubcLen)
+	if ubcLen := len(pg.ballsGround[1]); ubcLen != 20 {
+		t.Errorf("Length of ballGround is wrong, hope %d, get %d.", 40, ubcLen)
 	}
-	if ucLen := len(pg.userCollision[1]); ucLen != 5 {
+	if ucLen := len(pg.userCollisionCache[1]); ucLen != 5 {
 		t.Errorf("Length of collisionCache is wrong, hope %d, get %d.", 5, ucLen)
+	}
+	if ubcLen := len(pg.userNewBallsCache[1]); ubcLen != 22 {
+		t.Errorf("Length of newBallsCache is wrong, hope %d, get %d.", 22, ubcLen)
 	}
 
 	// DeleteUser
 	pg.DeleteUser(1)
-	if ucLen := len(pg.userCollision); ucLen != 20 {
+	if ucLen := len(pg.userCollisionCache); ucLen != 20 {
 		t.Errorf("Length of user collisionInfo map is wrong, hope %d, get %d.", 20, ucLen)
 	}
-	if ubLen := len(pg.userBallCache); ubLen != 20 {
+	if unbcLen := len(pg.userNewBallsCache); unbcLen != 20 {
+		t.Errorf("Length of user newBallInfo map is wrong, hope %d, get %d.", 20, unbcLen)
+	}
+	if ubLen := len(pg.ballsGround); ubLen != 20 {
 		t.Errorf("Length of user ballInfo map is wrong, hope %d, get %d.", 20, ubLen)
 	}
 	if ubsLen := len(pg.userBytesCache); ubsLen != 20 {
 		t.Errorf("Length of user bytesInfo map is wrong, hope %d, get %d.", 20, ubsLen)
 	}
-	if uc0Len := len(pg.userCollision[0]); uc0Len != 45 {
-		t.Errorf("Length of collisionCache of Sys user is wrong, hope %d, get %d.", 45, uc0Len)
+
+	if uc0Len := len(pg.userCollisionCache[0]); uc0Len != 47 {
+		t.Errorf("Length of collisionCache of Sys user is wrong, hope %d, get %d.", 47, uc0Len)
 	}
-	if ubc0Len := len(pg.userBallCache[0]); ubc0Len != 0 {
+	if ubc0Len := len(pg.ballsGround[0]); ubc0Len != 0 {
 		t.Errorf("Length of collisionCache of Sys user is wrong, hope %d, get %d.", 0, ubc0Len)
 	}
 
 	// PkgsForEachUser
-	pi2 := tm.GenerateTestRandomPlaygroundInfo(2, 20, 20, 5, 0)
+	pi2 := tm.GenerateTestRandomPlaygroundInfo(2, 22, 20, 5, 0)
 	if err := pg.PutPkg(pi2); err != nil {
 		t.Error(err)
 	}
@@ -80,17 +90,27 @@ func TestPlayground(t *testing.T) {
 	if pisLen := len(pis); pisLen != 19 {
 		t.Errorf("Length of playgroundInfo is wrong, hope %d, get %d.", 19, pisLen)
 	}
-	if ubcLen := len(pg.userBytesCache[2][0].Buf); ubcLen != 0 {
+	if ubcLen := len(pg.userBytesCache[2][newBallIndex].Buf); ubcLen != 0 {
 		t.Errorf("Length of BytesCache is wrong, hope %d, get %d.", 0, ubcLen)
 	}
-	if ubcLen := len(pg.userBytesCache[2][1].Buf); ubcLen != 0 {
+	if ubcLen := len(pg.userBytesCache[2][ballsIndex].Buf); ubcLen != 0 {
 		t.Errorf("Length of BytesCache is wrong, hope %d, get %d.", 0, ubcLen)
 	}
-	if ubcLen := len(pg.userBytesCache[2][1].Buf); ubcLen != 0 {
+	if ubcLen := len(pg.userBytesCache[2][collisionIndex].Buf); ubcLen != 0 {
 		t.Errorf("Length of BytesCache is wrong, hope %d, get %d.", 0, ubcLen)
 	}
-	if ucLen := len(pg.userCollision[2]); ucLen != 0 {
+	if ubcLen := len(pg.userBytesCache[2][bufferIndex].Buf); ubcLen != 0 {
+		t.Errorf("Length of BytesCache is wrong, hope %d, get %d.", 0, ubcLen)
+	}
+	if ucLen := len(pg.userCollisionCache[2]); ucLen != 0 {
 		t.Errorf("Length of collisionCache is wrong, hope %d, get %d.", 0, ucLen)
+	}
+	if ucLen := len(pg.userNewBallsCache[2]); ucLen != 0 {
+		t.Errorf("Length of collisionCache is wrong, hope %d, get %d.", 0, ucLen)
+	}
+
+	if bgLen := len(pg.ballsGround[2]); bgLen != 42 {
+		t.Errorf("Length of collisionCache is wrong, hope %d, get %d.", 42, bgLen)
 	}
 
 	pi = new(m.PlaygroundInfo)
@@ -104,14 +124,14 @@ func TestPlayground(t *testing.T) {
 	if LenDisappear := len(pi.Disappears.IDs); LenDisappear != 0 {
 		t.Errorf("Length of Disappears is wrong , hope %d, get %d.", 0, LenDisappear)
 	}
-	if LenNewBalls := len(pi.NewBalls.BallInfos); LenNewBalls != 0 {
-		t.Errorf("Length of NewBallss is wrong , hope %d, get %d.", 0, LenNewBalls)
+	if LenNewBalls := len(pi.NewBalls.BallInfos); LenNewBalls != 22 {
+		t.Errorf("Length of NewBallss is wrong , hope %d, get %d.", 22, LenNewBalls)
 	}
-	if LenDisplace := len(pi.Displacements.BallInfos); LenDisplace != 40 {
-		t.Errorf("Length of LenDisplace is wrong , hope %d, get %d.", 40, LenDisplace)
+	if LenDisplace := len(pi.Displacements.BallInfos); LenDisplace != 20 {
+		t.Errorf("Length of LenDisplace is wrong , hope %d, get %d.", 20, LenDisplace)
 	}
-	if LenCollision := len(pi.Collisions.CollisionInfos); LenCollision != 50 {
-		t.Errorf("Length of LenCollision is wrong , hope %d, get %d.", 50, LenCollision)
+	if LenCollision := len(pi.Collisions.CollisionInfos); LenCollision != 52 {
+		t.Errorf("Length of LenCollision is wrong , hope %d, get %d.", 52, LenCollision)
 	}
 
 }

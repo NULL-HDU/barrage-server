@@ -253,9 +253,17 @@ func (pg *playground) packUpPkgs(pi *m.PlaygroundInfo) error {
 		nb[v.ID()] = v
 	}
 
-	// displacementInfo, modify existing balls
+	// displacementInfo, if ball is not in ballsGround, the ball should in newBallsCache
+	// then modify existing balls in the appropriate place.
 	for _, v := range pi.Displacements.BallInfos {
-		bg[v.ID()] = v
+		if _, ok := nb[v.ID()]; ok {
+			nb[v.ID()] = v
+			continue
+		}
+		if _, ok := bg[v.ID()]; ok {
+			bg[v.ID()] = v
+			continue
+		}
 	}
 
 	// collisionInfo, base check and cache them to userCollisionCache

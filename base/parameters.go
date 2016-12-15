@@ -20,4 +20,4 @@ var PlayGroundWidth = 3000
 var OpenRoomIDs = []RoomID{1}
 
 // RoomBoardCastDuration the duration between two boardcast of the room
-var RoomBoardCastDuration = time.Millisecond * 15
+var RoomBoardCastDuration = time.Millisecond * 40

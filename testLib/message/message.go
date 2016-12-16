@@ -23,6 +23,8 @@ const (
 	DisappearID = 99
 )
 
+var existBall = map[b.UserID][]ball.Ball{}
+
 func generateBall() ball.Ball {
 	b := ball.NewBallWithSpecialID(0, 99)
 	return b
@@ -129,16 +131,22 @@ func GenerateDisappearsInfoFromBalls(balls []ball.Ball) *m.DisappearsInfo {
 }
 
 func GenerateTestRandomPlaygroundInfo(sender b.UserID, niNum, diNum, ciNum, dsiNum int) *m.PlaygroundInfo {
-	collisionedBalls := tball.GenerateRandomIDBall(sender, ciNum+dsiNum)
+	newBalls := tball.GenerateRandomIDBall(sender, ciNum+dsiNum+niNum)
+	var userBalls []ball.Ball
+	if v, ok := existBall[sender]; ok {
+		userBalls = v[:diNum]
+	}
+	collisionBall := GenerateCollisionsInfoFromBalls(newBalls[:ciNum])
+	disappearBall := GenerateDisappearsInfoFromBalls(newBalls[ciNum : ciNum+dsiNum])
 	return &m.PlaygroundInfo{
 		Sender: sender,
 		NewBalls: &m.BallsInfo{
-			BallInfos: append(tball.GenerateRandomIDBall(sender, niNum), collisionedBalls[:ciNum/2]...),
+			BallInfos: newBalls,
 		},
 		Displacements: &m.BallsInfo{
-			BallInfos: append(tball.GenerateRandomIDBall(sender, diNum), collisionedBalls[ciNum/2:]...),
+			BallInfos: userBalls,
 		},
-		Collisions: GenerateCollisionsInfoFromBalls(collisionedBalls[:ciNum]),
-		Disappears: GenerateDisappearsInfoFromBalls(collisionedBalls[ciNum:]),
+		Collisions: collisionBall,
+		Disappears: disappearBall,
 	}
 }

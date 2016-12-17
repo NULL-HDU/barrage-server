@@ -269,18 +269,13 @@ func (pg *playground) packUpPkgs(pi *m.PlaygroundInfo) error {
 	// collisionInfo, base check and cache them to userCollisionCache
 	validCollisionInfos := make([]*m.CollisionInfo, 0, pi.Collisions.Length())
 	for _, v := range pi.Collisions.CollisionInfos {
-		// there are an unknow error
-		if len(v.States) == 0 {
-			logger.Errorln("Invalid collisionInfo: ", v)
-			continue
-		}
-		if v.States[1] != ball.Alive {
-			if deleted := pg.checkAndDeleteBall(v.IDs[1].UID, v.IDs[1].ID); !deleted {
+		if v.States[0] != ball.Alive {
+			if deleted := pg.checkAndDeleteBall(v.IDs[0].UID, v.IDs[0].ID); !deleted {
 				continue
 			}
 		}
-		if v.States[0] != ball.Alive {
-			if deleted := pg.checkAndDeleteBall(v.IDs[0].UID, v.IDs[0].ID); !deleted {
+		if v.States[1] != ball.Alive {
+			if deleted := pg.checkAndDeleteBall(v.IDs[1].UID, v.IDs[1].ID); !deleted {
 				continue
 			}
 		}

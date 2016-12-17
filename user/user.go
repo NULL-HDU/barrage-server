@@ -164,16 +164,12 @@ func (u *user) checkDisconnectInfo(di *m.DisconnectInfo) error {
 
 // SendError ...
 func (u *user) SendError(s string) {
-	go func() {
-		u.sendError(s)
-	}()
+	u.sendError(s)
 }
 
 // Send ...
 func (u *user) Send(ipkg m.InfoPkg) {
-	go func() {
-		u.sendSync(ipkg)
-	}()
+	u.sendSync(ipkg)
 }
 
 // BindRoom ...
@@ -216,7 +212,6 @@ func (u *user) receiveAndUploadMessage() {
 			if err == io.EOF {
 				break
 			}
-			u.sendError(b.ErrServerError.Error())
 			logger.Errorf("Websocket Message Receive Error: %s \n", err)
 			continue
 		}

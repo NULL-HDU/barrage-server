@@ -79,8 +79,8 @@ func TestPlayground(t *testing.T) {
 		t.Errorf("Length of user bytesInfo map is wrong, hope %d, get %d.", 20, ubsLen)
 	}
 
-	if uc0Len := len(pg.userCollisionCache[0]); uc0Len != 22 {
-		t.Errorf("Length of collisionCache of Sys user is wrong, hope %d, get %d.", 22, uc0Len)
+	if uc0Len := len(pg.userCollisionCache[0]); uc0Len != 0 {
+		t.Errorf("Length of collisionCache of Sys user is wrong, hope %d, get %d.", 0, uc0Len)
 	}
 
 	// PkgsForEachUser

@@ -367,9 +367,9 @@ func (pg *playground) DeleteUser(uid b.UserID) {
 	pg.userCollisionCache[b.SysID] = append(pg.userCollisionCache[b.SysID], pg.userCollisionCache[uid]...)
 
 	// change and move balls in ballsGround into userCollisionCache of SysID user;
-	pg.changeBallsToCollisionInfoAndPutToSysCache(uid, pg.ballsGround[uid])
+	// pg.changeBallsToCollisionInfoAndPutToSysCache(uid, pg.ballsGround[uid])
 	// change and move balls in userNewBallsCache into userCollisionCache of SysID user;
-	pg.changeBallsToCollisionInfoAndPutToSysCache(uid, pg.userNewBallsCache[uid])
+	// pg.changeBallsToCollisionInfoAndPutToSysCache(uid, pg.userNewBallsCache[uid])
 
 	delete(pg.userCollisionCache, uid)
 	delete(pg.ballsGround, uid)

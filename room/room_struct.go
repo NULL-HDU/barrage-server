@@ -163,9 +163,9 @@ func (r *Room) playgroundBoardCast() {
 			logger.Errorf("Not find user %d in room cache map %d.", pi.Receiver, r.id)
 			continue
 		}
-		if len(pi.CacheBytes) > 16 {
-			u.Send(pi)
-		}
+		// if len(pi.CacheBytes) > 16 {
+		u.Send(pi)
+		// }
 	}
 }
 

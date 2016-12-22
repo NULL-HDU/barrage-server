@@ -269,17 +269,21 @@ func (pg *playground) packUpPkgs(pi *m.PlaygroundInfo) error {
 	// collisionInfo, base check and cache them to userCollisionCache
 	validCollisionInfos := make([]*m.CollisionInfo, 0, pi.Collisions.Length())
 	for _, v := range pi.Collisions.CollisionInfos {
+		validCount := 2
 		if v.States[0] != ball.Alive {
 			if deleted := pg.checkAndDeleteBall(v.IDs[0].UID, v.IDs[0].ID); !deleted {
-				continue
+				validCount--
 			}
 		}
 		if v.States[1] != ball.Alive {
 			if deleted := pg.checkAndDeleteBall(v.IDs[1].UID, v.IDs[1].ID); !deleted {
-				continue
+				validCount--
 			}
 		}
 
+		if validCount <= 0 {
+			continue
+		}
 		validCollisionInfos = append(validCollisionInfos, v)
 	}
 

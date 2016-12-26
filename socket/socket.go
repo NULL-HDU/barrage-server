@@ -65,22 +65,29 @@ func (s *socket) Open(port, path string) error {
 // HandleFunc ...
 func (s *socket) HandleFunc(wc *ws.Conn) {
 	logger.Infof("Connect flow service from %v \n", wc.RemoteAddr())
+	defer func() {
+		wc.Close()
+		if v := recover(); v != nil {
+			logger.Infof("HandleFunc Panic! %v\n", v)
+		}
+	}()
 
 	// Random user Id (s -> c)
 	msg, uid := m.NewRandomUserIDMsg()
+	logger.Infof("random uid %d \n", uid)
 	bs, _ := msg.MarshalBinary()
 	if err := ws.Message.Send(wc, bs); err != nil {
 		logger.Errorf("Can't send randID: %s \n", err)
-		wc.Close()
 		return
 	}
 
 	u := user.NewUser(wc, uid)
+	logger.Infoln("user create success.")
 	r.JoinHall(u)
+	logger.Infoln("user start play.")
 	u.Play()
 	r.LeftHall(uid)
 
 	logger.Infof("User %d left game. \n", uid)
 	logger.Infof("Close Connect from %v \n", wc.RemoteAddr())
-	wc.Close()
 }

@@ -220,17 +220,17 @@ func (u *user) receiveAndUploadMessage() {
 		ipkg, msg, err := u.convertBytesToInfopkg(cache)
 		if err != nil {
 			if err != m.ErrEmptyInfo {
+				logger.Infof("Client Message Error: %v.\n", err)
 				u.sendError(
 					constructErrorStringForMsg(msg, m.ErrInvalidMessage.Error()))
-				logger.Infof("Client Message Error: %v.\n", err)
 			}
 			continue
 		}
 
 		// pre operation for infopkg
 		if err := u.preOperationForIpkg(ipkg); err != nil {
-			u.sendError(constructErrorStringForMsg(msg, err.Error()))
 			logger.Infof("Client Message Error: %v.\n", err)
+			u.sendError(constructErrorStringForMsg(msg, err.Error()))
 			continue
 		}
 

@@ -75,6 +75,9 @@ type user struct {
 	uid      b.UserID
 	wc       *ws.Conn
 
+	stateM sync.RWMutex
+	state  uint8 // 0 not play, 1 play
+
 	roomM    sync.RWMutex
 	rid      b.RoomID
 	infoChan chan<- m.InfoPkg
@@ -179,14 +182,24 @@ func (u *user) BindRoom(id b.RoomID, c chan<- m.InfoPkg) {
 // SendError ...
 func (u *user) SendError(s string) {
 	go func() {
-		u.sendError(s)
+		u.stateM.RLock()
+		defer u.stateM.RUnlock()
+
+		if u.state == 1 {
+			u.sendError(s)
+		}
 	}()
 }
 
 // Send ...
 func (u *user) Send(ipkg m.InfoPkg) {
 	go func() {
-		u.sendInfoPkg(ipkg)
+		u.stateM.RLock()
+		defer u.stateM.RUnlock()
+
+		if u.state == 1 {
+			u.sendInfoPkg(ipkg)
+		}
 	}()
 }
 
@@ -259,15 +272,26 @@ func (u *user) receiveAndUploadMessage() {
 	}
 }
 
+// overPlay ...
+func (u *user) overPlay() {
+	close(u.writeChan)
+
+	u.stateM.Lock()
+	defer u.stateM.Unlock()
+	u.state = 0
+}
+
 // Play ...
 func (u *user) Play() error {
 	if u.wc == nil {
 		return errInvalidUser
 	}
+	u.stateM.Lock()
+	u.state = 1
+	u.stateM.Unlock()
 
 	go u.sendMessage()
 	u.receiveAndUploadMessage()
-
-	close(u.writeChan)
+	u.overPlay()
 	return nil
 }

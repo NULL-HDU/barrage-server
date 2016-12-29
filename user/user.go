@@ -9,6 +9,7 @@ import (
 	"fmt"
 	ws "golang.org/x/net/websocket"
 	"io"
+	"time"
 )
 
 var (
@@ -19,6 +20,7 @@ var (
 )
 
 var logger = b.Log
+var interval = time.Second * 2
 
 // constructErrorStringForMsg construct error string after receiving and unmarshaling message
 // according to message type and running environment.
@@ -62,8 +64,9 @@ type User interface {
 // NewUser create a User by websocket.Conn and userID.
 func NewUser(wc *ws.Conn, id b.UserID) User {
 	return &user{
-		uid: id,
-		wc:  wc,
+		uid:       id,
+		wc:        wc,
+		writeChan: make(chan []byte, 50),
 	}
 }
 
@@ -75,6 +78,8 @@ type user struct {
 	roomM    sync.RWMutex
 	rid      b.RoomID
 	infoChan chan<- m.InfoPkg
+
+	writeChan chan []byte
 }
 
 // ID ...
@@ -162,16 +167,6 @@ func (u *user) checkDisconnectInfo(di *m.DisconnectInfo) error {
 	return nil
 }
 
-// SendError ...
-func (u *user) SendError(s string) {
-	u.sendError(s)
-}
-
-// Send ...
-func (u *user) Send(ipkg m.InfoPkg) {
-	u.sendSync(ipkg)
-}
-
 // BindRoom ...
 func (u *user) BindRoom(id b.RoomID, c chan<- m.InfoPkg) {
 	u.roomM.Lock()
@@ -181,26 +176,47 @@ func (u *user) BindRoom(id b.RoomID, c chan<- m.InfoPkg) {
 	u.infoChan = c
 }
 
+// SendError ...
+func (u *user) SendError(s string) {
+	go func() {
+		u.sendError(s)
+	}()
+}
+
+// Send ...
+func (u *user) Send(ipkg m.InfoPkg) {
+	go func() {
+		u.sendInfoPkg(ipkg)
+	}()
+}
+
 // sendSpecialMessage ...
 func (u *user) sendError(s string) {
 	si := &m.SpecialMsgInfo{Message: s}
-	u.sendSync(si)
+	u.sendInfoPkg(si)
 }
 
-// sendSync construct message and write bytes to wc.
-func (u *user) sendSync(ipkg m.InfoPkg) error {
+// sendInfoPkg construct message and write bytes to wc.
+func (u *user) sendInfoPkg(ipkg m.InfoPkg) error {
 	msg, err := m.NewMessageFromInfoPkg(ipkg)
 	if err != nil {
-		logger.Errorln(err)
+		return err
 	}
 
 	bs, _ := msg.MarshalBinary()
 
-	if err := ws.Message.Send(u.wc, bs); err != nil {
-		logger.Errorf("Can't send: %s \n", err)
-	}
-
+	u.writeChan <- bs
 	return nil
+}
+
+// sendMessage ...
+func (u *user) sendMessage() {
+	for bs := range u.writeChan {
+		u.wc.SetWriteDeadline(time.Now().Add(interval))
+		if err := ws.Message.Send(u.wc, bs); err != nil {
+			logger.Errorf("Can't send: %s \n", err)
+		}
+	}
 }
 
 // play ...
@@ -208,12 +224,12 @@ func (u *user) receiveAndUploadMessage() {
 	var cache []byte
 	for {
 		// receive bytes
+		u.wc.SetReadDeadline(time.Now().Add(interval))
 		if err := ws.Message.Receive(u.wc, &cache); err != nil {
-			if err == io.EOF {
-				break
+			if err != io.EOF {
+				logger.Errorf("Websocket Message Receive Error: %s \n", err)
 			}
-			logger.Errorf("Websocket Message Receive Error: %s \n", err)
-			continue
+			break
 		}
 
 		// convert bytes to infopkg
@@ -236,8 +252,8 @@ func (u *user) receiveAndUploadMessage() {
 
 		// upload infopkg
 		if err := u.UploadInfo(ipkg); err != nil {
-			u.sendError(b.ErrServerError.Error())
 			logger.Errorf("InfoChan of the user %d is nil.", u.ID())
+			u.sendError(b.ErrServerError.Error())
 			break
 		}
 	}
@@ -249,6 +265,9 @@ func (u *user) Play() error {
 		return errInvalidUser
 	}
 
+	go u.sendMessage()
 	u.receiveAndUploadMessage()
+
+	close(u.writeChan)
 	return nil
 }

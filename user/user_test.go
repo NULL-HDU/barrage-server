@@ -60,10 +60,7 @@ func TestUserGuardMethods(t *testing.T) {
 
 	serverCheckFunc := func(wc *websocket.Conn) {
 		testchan := make(chan m.InfoPkg)
-		u := &user{
-			uid: 20,
-			wc:  wc,
-		}
+		u := NewUser(wc, 20)
 		u.BindRoom(20, testchan)
 
 		// test Play
@@ -168,14 +165,15 @@ func TestUserSendAndSendErrorAndPlay(t *testing.T) {
 	serverCheckFunc := func(wc *websocket.Conn) {
 		testchan := make(chan m.InfoPkg)
 		u := &user{
-			uid: 20,
-			wc:  wc,
+			uid:       20,
+			wc:        wc,
+			writeChan: make(chan []byte, 50),
 		}
 		u.BindRoom(20, testchan)
 
 		pi := tm.GenerateTestPlaygroundInfo(0, 1, 1, 1, 1)
 		// test Send
-		u.sendSync(pi)
+		u.sendInfoPkg(pi)
 		// test SendError
 		u.sendError("test_send_error")
 
@@ -261,4 +259,52 @@ func TestUserSendAndSendErrorAndPlay(t *testing.T) {
 
 	w.Wait()
 
+}
+
+func TestUserReceiveTimeout(t *testing.T) {
+	var w sync.WaitGroup
+	w.Add(2)
+
+	serverCheckFunc := func(wc *websocket.Conn) {
+		testchan := make(chan m.InfoPkg)
+		u := &user{
+			uid:       20,
+			wc:        wc,
+			writeChan: make(chan []byte, 50),
+		}
+		u.BindRoom(20, testchan)
+
+		// test Play
+		go func() {
+			u.Play()
+			logger.Infoln("receive timeout success")
+		}()
+
+		time.Sleep(time.Second * 3)
+		w.Done()
+	}
+
+	clientCheckFunc := func(wc *websocket.Conn) {
+		di := &m.DisconnectInfo{RID: 1, UID: 20}
+		bs, _ := di.MarshalBinary()
+		msg := m.NewMessage(m.MsgDisconnect, bs)
+		bs, _ = msg.MarshalBinary()
+		wc.Write(bs)
+
+		time.Sleep(time.Second * 4)
+
+		w.Done()
+	}
+
+	go func() {
+		createTestWebsocket("2322", serverCheckFunc)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	go func() {
+		testWebsocketClient("2322", clientCheckFunc)
+	}()
+
+	w.Wait()
 }

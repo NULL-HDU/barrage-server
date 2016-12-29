@@ -65,6 +65,7 @@ func (s *socket) Open(port, path string) error {
 // HandleFunc ...
 func (s *socket) HandleFunc(wc *ws.Conn) {
 	logger.Infof("Connect flow service from %v \n", wc.RemoteAddr())
+
 	defer func() {
 		wc.Close()
 		if v := recover(); v != nil {

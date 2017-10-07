@@ -118,7 +118,6 @@ func Open(r Tiggler, loopDuration time.Duration) {
 // It should send GameOverInfo to client first.
 func Close(r Tiggler) {
 	r.CompareAndSetStatus(roomOpen, roomClose)
-
 	if r.ID() == hallID {
 		logger.Infoln("Hall is close!")
 	} else {
